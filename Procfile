@@ -1,2 +1,2 @@
 worker: python scheduler.py
-web: gunicorn dashboard:app --bind 0.0.0.0:5000
+web: gunicorn dashboard:app --bind 0.0.0.0:$PORT
