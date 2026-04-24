@@ -24,7 +24,7 @@ def run():
 
             for email_data in emails:
                 print(f"  Processing: {email_data['subject']}")
-                reply = generate_reply(client_config, email_data)
+                reply = generate_reply(client_id, client_config, email_data)
                 send_reply(client_config, email_data, reply)
                 log_email(client_id, client_config["name"], email_data, reply)
 
