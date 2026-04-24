@@ -1,13 +1,29 @@
 """
 Simple web dashboard to view processed emails.
-Run with: python dashboard.py
-Then open: http://localhost:5000
+Also runs the email agent scheduler in a background thread.
 """
 
+import threading
+import schedule
+import time
 from flask import Flask, render_template_string
 from database import get_all_emails, get_stats, init_db
 
 app = Flask(__name__)
+
+
+def run_scheduler():
+    from main import run
+    run()  # run once immediately
+    schedule.every(10).minutes.do(run)
+    while True:
+        schedule.run_pending()
+        time.sleep(30)
+
+
+# Start scheduler in background thread
+scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+scheduler_thread.start()
 
 HTML = """
 <!DOCTYPE html>
