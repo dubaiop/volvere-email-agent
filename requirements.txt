@@ -1,0 +1,4 @@
+anthropic
+schedule
+python-dotenv
+flask
