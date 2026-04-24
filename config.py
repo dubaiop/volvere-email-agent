@@ -3,6 +3,8 @@ Client configuration — 5 executive advisor agents.
 Each agent has its own email and acts as a specific C-suite advisor.
 """
 
+import os
+
 CLIENTS = {
     "ceo_advisor": {
         "name": "CEO Advisor",
@@ -14,7 +16,7 @@ CLIENTS = {
             "Sign your emails as 'Alex — Your CEO Advisor'."
         ),
         "email_address": "ceovolvere@gmail.com",
-        "email_password": "YOUR_APP_PASSWORD",
+        "email_password": os.environ.get("CEO_EMAIL_PASSWORD", ""),
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
@@ -30,7 +32,7 @@ CLIENTS = {
             "Sign your emails as 'Jordan — Your COO Advisor'."
         ),
         "email_address": "coovolvere@gmail.com",
-        "email_password": "YOUR_APP_PASSWORD",
+        "email_password": os.environ.get("COO_EMAIL_PASSWORD", ""),
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
@@ -46,7 +48,7 @@ CLIENTS = {
             "Sign your emails as 'Morgan — Your CFO Advisor'."
         ),
         "email_address": "cfovolvere@gmail.com",
-        "email_password": "YOUR_APP_PASSWORD",
+        "email_password": os.environ.get("CFO_EMAIL_PASSWORD", ""),
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
@@ -62,7 +64,7 @@ CLIENTS = {
             "Sign your emails as 'Taylor — Your CMO Advisor'."
         ),
         "email_address": "cmovolvere@gmail.com",
-        "email_password": "YOUR_APP_PASSWORD",
+        "email_password": os.environ.get("CMO_EMAIL_PASSWORD", ""),
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
@@ -77,7 +79,7 @@ CLIENTS = {
             "Sign your emails as 'Riley — Your CTO Advisor'."
         ),
         "email_address": "ctovolvere@hotmail.com",
-        "email_password": "YOUR_APP_PASSWORD",
+        "email_password": os.environ.get("CTO_EMAIL_PASSWORD", ""),
         "imap_server": "imap-mail.outlook.com",
         "smtp_server": "smtp-mail.outlook.com",
         "smtp_port": 587,
