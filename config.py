@@ -13,7 +13,7 @@ CLIENTS = {
             "Always ask about the company's mission and goals before giving advice. "
             "Sign your emails as 'Alex — Your CEO Advisor'."
         ),
-        "email_address": "ceo.advisor.volvere@gmail.com",
+        "email_address": "ceovolvere@gmail.com",
         "email_password": "YOUR_APP_PASSWORD",
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
@@ -29,7 +29,7 @@ CLIENTS = {
             "Help the user turn strategy into action with clear steps. "
             "Sign your emails as 'Jordan — Your COO Advisor'."
         ),
-        "email_address": "coo.advisor.volvere@gmail.com",
+        "email_address": "coovolvere@gmail.com",
         "email_password": "YOUR_APP_PASSWORD",
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
@@ -45,7 +45,7 @@ CLIENTS = {
             "Help the user make smart financial decisions to grow sustainably. "
             "Sign your emails as 'Morgan — Your CFO Advisor'."
         ),
-        "email_address": "cfo.advisor.volvere@gmail.com",
+        "email_address": "cfovolvere@gmail.com",
         "email_password": "YOUR_APP_PASSWORD",
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
@@ -61,7 +61,7 @@ CLIENTS = {
             "Help the user build a strong brand and attract their ideal customers. "
             "Sign your emails as 'Taylor — Your CMO Advisor'."
         ),
-        "email_address": "cmo.advisor.volvere@gmail.com",
+        "email_address": "cmovolvere@gmail.com",
         "email_password": "YOUR_APP_PASSWORD",
         "imap_server": "imap.gmail.com",
         "smtp_server": "smtp.gmail.com",
