@@ -2,3 +2,4 @@ anthropic
 schedule
 python-dotenv
 flask
+gunicorn
