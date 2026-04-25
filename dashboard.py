@@ -515,6 +515,24 @@ const chat = document.getElementById('chat');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('send-btn');
 
+const MENTION_MAP = {
+    'alex': 'ceo_advisor', 'ceo': 'ceo_advisor',
+    'jordan': 'coo_advisor', 'coo': 'coo_advisor',
+    'morgan': 'cfo_advisor', 'cfo': 'cfo_advisor',
+    'taylor': 'cmo_advisor', 'cmo': 'cmo_advisor',
+    'riley': 'cto_advisor', 'cto': 'cto_advisor',
+};
+
+function detectMentions(text) {
+    const lower = text.toLowerCase();
+    const matched = new Set();
+    for (const [keyword, id] of Object.entries(MENTION_MAP)) {
+        const re = new RegExp(`\\b${keyword}\\b`);
+        if (re.test(lower)) matched.add(id);
+    }
+    return matched.size > 0 ? Array.from(matched) : null;
+}
+
 // Auto-resize textarea
 input.addEventListener('input', () => {
     input.style.height = 'auto';
@@ -541,12 +559,17 @@ function addUserMsg(text) {
     scrollBottom();
 }
 
-function addThinkingCards() {
+function addThinkingCards(targetIds) {
+    const active = targetIds ? ADVISORS.filter(a => targetIds.includes(a.id)) : ADVISORS;
+    const label = active.length === ADVISORS.length
+        ? 'Board responding…'
+        : active.map(a => a.name).join(' & ') + ' responding…';
+
     const wrap = document.createElement('div');
     wrap.className = 'responses';
-    wrap.innerHTML = `<div class="responses-label">Board responding…</div>
+    wrap.innerHTML = `<div class="responses-label">${label}</div>
         <div class="responses-grid" id="responses-grid">
-            ${ADVISORS.map(a => `
+            ${active.map(a => `
             <div class="advisor-card thinking" id="card-${a.id}">
                 <div class="card-header">
                     <div class="card-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
@@ -584,8 +607,9 @@ async function sendMessage() {
     input.value = '';
     input.style.height = 'auto';
 
+    const targetIds = detectMentions(text);
     addUserMsg(text);
-    const wrap = addThinkingCards();
+    const wrap = addThinkingCards(targetIds);
 
     // Add user turn to history
     history.push({ role: 'user', content: text });
@@ -594,7 +618,7 @@ async function sendMessage() {
         const res = await fetch('/api/meeting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+            body: JSON.stringify({ message: text, history: history.slice(0, -1), advisors: targetIds })
         });
         const data = await res.json();
 
@@ -645,8 +669,14 @@ def meeting_chat():
     data = request.json
     message = data.get("message", "")
     history = data.get("history", [])
+    target_ids = data.get("advisors", None)  # None means all
 
     messages = history + [{"role": "user", "content": message}]
+
+    clients_to_query = {
+        cid: cfg for cid, cfg in CLIENTS.items()
+        if target_ids is None or cid in target_ids
+    }
 
     def ask_advisor(client_id, client_config):
         client = anthropic.Anthropic()
@@ -660,7 +690,7 @@ def meeting_chat():
 
     results = {}
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(ask_advisor, cid, cfg): cid for cid, cfg in CLIENTS.items()}
+        futures = {executor.submit(ask_advisor, cid, cfg): cid for cid, cfg in clients_to_query.items()}
         for future in as_completed(futures):
             client_id, reply = future.result()
             results[client_id] = {"reply": reply}
