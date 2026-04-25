@@ -3,6 +3,8 @@ Web dashboard for the Volvere Email Agent.
 Runs the scheduler in a background thread and serves a modern interactive UI.
 """
 
+import json
+import re
 import threading
 import schedule
 import time
@@ -370,299 +372,295 @@ MEETING_HTML = """
                background: var(--bg); color: var(--text); height: 100vh;
                display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Header */
-        header { padding: 16px 32px; background: var(--surface);
+        header { padding: 14px 28px; background: var(--surface);
                  border-bottom: 1px solid var(--border);
-                 display: flex; align-items: center; justify-content: space-between;
-                 flex-shrink: 0; }
-        .header-left { display: flex; align-items: center; gap: 16px; }
+                 display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
         .back-btn { background: var(--surface2); border: 1px solid var(--border);
-                    border-radius: 8px; padding: 7px 14px; color: var(--muted);
-                    font-size: 13px; cursor: pointer; text-decoration: none;
-                    transition: all .2s; }
+                    border-radius: 8px; padding: 6px 12px; color: var(--muted);
+                    font-size: 12px; cursor: pointer; text-decoration: none;
+                    transition: all .2s; white-space: nowrap; }
         .back-btn:hover { border-color: var(--accent); color: var(--text); }
-        .meeting-title { display: flex; align-items: center; gap: 10px; }
-        .rec-dot { width: 8px; height: 8px; background: #f87171; border-radius: 50%;
-                   animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-        .meeting-title h1 { font-size: 16px; font-weight: 600; }
-        .meeting-title span { font-size: 12px; color: var(--muted); }
+        .meeting-title { display: flex; align-items: center; gap: 8px; }
+        .rec-dot { width: 7px; height: 7px; background: #f87171; border-radius: 50%;
+                   animation: blink 1.5s infinite; flex-shrink: 0; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+        .meeting-title h1 { font-size: 15px; font-weight: 600; }
+        .meeting-title span { font-size: 11px; color: var(--muted); }
 
-        /* Advisor Pills */
-        .advisors { display: flex; gap: 8px; }
-        .advisor-pill { display: flex; align-items: center; gap: 6px;
-                        background: var(--surface2); border: 1px solid var(--border);
-                        border-radius: 20px; padding: 5px 12px; font-size: 12px; }
-        .advisor-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+        /* Seats strip */
+        .seats-strip { display: flex; gap: 10px; padding: 16px 28px;
+                       border-bottom: 1px solid var(--border); flex-shrink: 0;
+                       overflow-x: auto; }
 
-        /* Chat area */
-        #chat { flex: 1; overflow-y: auto; padding: 24px 32px; display: flex;
-                flex-direction: column; gap: 24px; }
-
-        /* Welcome */
-        .welcome { text-align: center; padding: 40px 20px; }
-        .welcome-icon { font-size: 48px; margin-bottom: 16px; }
-        .welcome h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-        .welcome p { color: var(--muted); font-size: 14px; max-width: 400px; margin: 0 auto; }
-
-        /* User message */
-        .msg-user { display: flex; justify-content: flex-end; }
-        .msg-user .bubble { background: linear-gradient(135deg, var(--accent), var(--accent2));
-                            color: white; border-radius: 18px 18px 4px 18px;
-                            padding: 12px 18px; max-width: 60%; font-size: 14px;
-                            line-height: 1.6; }
-
-        /* Advisor responses grid */
-        .responses { display: flex; flex-direction: column; gap: 12px; }
-        .responses-label { font-size: 11px; color: var(--muted); text-transform: uppercase;
-                           letter-spacing: .5px; padding-left: 4px; }
-        .responses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
-
-        .advisor-card { background: var(--surface); border: 1px solid var(--border);
-                        border-radius: 14px; overflow: hidden; transition: border-color .2s; }
-        .advisor-card:hover { border-color: var(--border); }
-        .card-header { display: flex; align-items: center; gap: 8px;
-                       padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        .card-avatar { width: 28px; height: 28px; border-radius: 50%;
-                       display: flex; align-items: center; justify-content: center;
-                       font-size: 11px; font-weight: 700; color: #0f0f13; flex-shrink: 0; }
-        .card-name { font-size: 13px; font-weight: 600; }
-        .card-role { font-size: 11px; color: var(--muted); }
-        .card-body { padding: 14px 16px; font-size: 13px; line-height: 1.75;
-                     color: var(--text); white-space: pre-wrap; }
-
-        /* Thinking skeleton */
-        .thinking .card-body { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
-        .skeleton { height: 12px; border-radius: 6px; background: var(--surface2);
-                    animation: shimmer 1.4s infinite; }
-        .skeleton.s1 { width: 80%; }
-        .skeleton.s2 { width: 95%; }
-        .skeleton.s3 { width: 65%; }
-        @keyframes shimmer {
-            0%,100% { opacity: .4; } 50% { opacity: .8; }
+        .seat { background: var(--surface); border: 1.5px solid var(--border);
+                border-radius: 14px; padding: 14px 16px; min-width: 158px;
+                display: flex; flex-direction: column; gap: 8px;
+                transition: all .3s; position: relative; overflow: hidden; }
+        .seat.idle    { opacity: .65; }
+        .seat.listening { opacity: 1; }
+        .seat.listening::after { content:''; position:absolute; inset:0;
+            background:linear-gradient(135deg,rgba(108,99,255,.05),transparent);
+            animation:breathe 2s ease-in-out infinite; }
+        @keyframes breathe { 0%,100%{opacity:0} 50%{opacity:1} }
+        .seat.hand-raised { opacity:1; animation:glow 2s ease-in-out infinite; }
+        @keyframes glow {
+            0%,100%{box-shadow:0 0 0 0 rgba(108,99,255,0)}
+            50%     {box-shadow:0 0 20px 3px rgba(108,99,255,.4)}
         }
+        .seat.silent   { opacity: .3; }
+        .seat.speaking { opacity: 1; }
 
-        /* Input bar */
-        .input-bar { padding: 20px 32px; border-top: 1px solid var(--border);
-                     background: var(--surface); flex-shrink: 0; }
-        .input-wrap { display: flex; gap: 12px; align-items: flex-end;
-                      max-width: 900px; margin: 0 auto; }
-        #input { flex: 1; background: var(--surface2); border: 1px solid var(--border);
-                 border-radius: 12px; padding: 12px 16px; color: var(--text);
-                 font-size: 14px; font-family: inherit; outline: none; resize: none;
-                 line-height: 1.5; max-height: 140px; transition: border-color .2s; }
-        #input:focus { border-color: var(--accent); }
-        #input::placeholder { color: var(--muted); }
-        .send-btn { background: linear-gradient(135deg, var(--accent), var(--accent2));
-                    border: none; border-radius: 12px; width: 44px; height: 44px;
-                    display: flex; align-items: center; justify-content: center;
-                    cursor: pointer; font-size: 18px; transition: opacity .2s; flex-shrink: 0; }
-        .send-btn:hover { opacity: .85; }
-        .send-btn:disabled { opacity: .4; cursor: not-allowed; }
-        .input-hint { text-align: center; font-size: 11px; color: var(--muted);
-                      margin-top: 10px; }
+        .seat-top { display:flex; align-items:center; gap:9px; }
+        .seat-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0;
+                       display:flex; align-items:center; justify-content:center;
+                       font-size:10px; font-weight:800; color:#0f0f13; }
+        .seat-name  { font-size:13px; font-weight:600; }
+        .seat-label { font-size:10px; color:var(--muted); }
+        .seat-status { font-size:11px; color:var(--muted); min-height:16px;
+                       display:flex; align-items:center; gap:5px; }
+        .status-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+        .seat-teaser { font-size:11px; color:var(--text); line-height:1.4;
+                       display:none; font-style:italic; }
+        .hand-raised .seat-teaser { display:block; }
+        .floor-btn { background:linear-gradient(135deg,var(--accent),var(--accent2));
+                     border:none; border-radius:8px; padding:6px 12px;
+                     color:white; font-size:11px; font-weight:600;
+                     cursor:pointer; display:none; transition:opacity .2s; }
+        .floor-btn:hover { opacity:.85; }
+        .hand-raised .floor-btn { display:block; }
+        .speaking .floor-btn { display:none; }
+
+        .listen-dots span { animation:dotbounce 1.2s infinite; display:inline-block; }
+        .listen-dots span:nth-child(2){animation-delay:.2s}
+        .listen-dots span:nth-child(3){animation-delay:.4s}
+        @keyframes dotbounce{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+        /* Transcript */
+        #transcript { flex:1; overflow-y:auto; padding:20px 28px;
+                      display:flex; flex-direction:column; gap:16px; }
+        .welcome { text-align:center; padding:48px 20px; color:var(--muted); }
+        .welcome-icon { font-size:40px; margin-bottom:12px; }
+        .welcome h2 { font-size:18px; font-weight:600; color:var(--text); margin-bottom:6px; }
+        .welcome p  { font-size:13px; max-width:380px; margin:0 auto; line-height:1.6; }
+
+        .msg-user { display:flex; justify-content:flex-end; }
+        .user-bubble { background:linear-gradient(135deg,var(--accent),var(--accent2));
+                       color:white; border-radius:18px 18px 4px 18px;
+                       padding:11px 16px; max-width:65%; font-size:14px; line-height:1.6; }
+
+        .advisor-entry { display:flex; flex-direction:column; gap:0;
+                         border-left:2px solid; padding-left:14px;
+                         animation:fadeIn .3s ease; }
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        .entry-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .entry-avatar { width:24px; height:24px; border-radius:50%;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:9px; font-weight:800; color:#0f0f13; flex-shrink:0; }
+        .entry-name { font-size:13px; font-weight:600; }
+        .entry-role { font-size:11px; color:var(--muted); }
+        .entry-text { font-size:13px; line-height:1.75; color:var(--text); white-space:pre-wrap; }
+
+        /* Input */
+        .input-bar { padding:16px 28px; border-top:1px solid var(--border);
+                     background:var(--surface); flex-shrink:0; }
+        .input-wrap { display:flex; gap:10px; align-items:flex-end;
+                      max-width:860px; margin:0 auto; }
+        #msg-input { flex:1; background:var(--surface2); border:1px solid var(--border);
+                 border-radius:12px; padding:11px 14px; color:var(--text);
+                 font-size:14px; font-family:inherit; outline:none; resize:none;
+                 line-height:1.5; max-height:120px; transition:border-color .2s; }
+        #msg-input:focus { border-color:var(--accent); }
+        #msg-input::placeholder { color:var(--muted); }
+        .send-btn { background:linear-gradient(135deg,var(--accent),var(--accent2));
+                    border:none; border-radius:12px; width:42px; height:42px;
+                    display:flex; align-items:center; justify-content:center;
+                    cursor:pointer; font-size:18px; flex-shrink:0; transition:opacity .2s; }
+        .send-btn:hover{opacity:.85} .send-btn:disabled{opacity:.35;cursor:not-allowed}
+        .input-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:8px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="header-left">
-        <a href="/" class="back-btn">← Dashboard</a>
-        <div class="meeting-title">
-            <div class="rec-dot"></div>
-            <h1>Board Meeting</h1>
-            <span>All 5 advisors present</span>
-        </div>
-    </div>
-    <div class="advisors">
-        <div class="advisor-pill"><div class="dot" style="background:#60a5fa"></div>Alex · CEO</div>
-        <div class="advisor-pill"><div class="dot" style="background:#34d399"></div>Jordan · COO</div>
-        <div class="advisor-pill"><div class="dot" style="background:#facc15"></div>Morgan · CFO</div>
-        <div class="advisor-pill"><div class="dot" style="background:#f472b6"></div>Taylor · CMO</div>
-        <div class="advisor-pill"><div class="dot" style="background:#fb923c"></div>Riley · CTO</div>
+    <a href="/" class="back-btn">← Dashboard</a>
+    <div class="meeting-title">
+        <div class="rec-dot"></div>
+        <h1>Board Meeting</h1>
+        <span>5 advisors present</span>
     </div>
 </header>
 
-<div id="chat">
+<div class="seats-strip" id="seats-strip"></div>
+
+<div id="transcript">
     <div class="welcome">
         <div class="welcome-icon">🎙</div>
-        <h2>The board is ready</h2>
-        <p>Ask anything — all five advisors will respond with their perspective instantly.</p>
+        <h2>The board is listening</h2>
+        <p>Speak your mind. Advisors who have something relevant will raise their hand — you decide who gets the floor.</p>
     </div>
 </div>
 
 <div class="input-bar">
     <div class="input-wrap">
-        <textarea id="input" rows="1" placeholder="Ask your board a question…"></textarea>
+        <textarea id="msg-input" rows="1" placeholder="Say something to the board…"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
     </div>
-    <div class="input-hint" id="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
 </div>
 
 <script>
 const ADVISORS = [
-    { id: 'ceo_advisor', name: 'Alex', role: 'CEO Advisor', color: '#60a5fa' },
+    { id: 'ceo_advisor', name: 'Alex',   role: 'CEO Advisor', color: '#60a5fa' },
     { id: 'coo_advisor', name: 'Jordan', role: 'COO Advisor', color: '#34d399' },
     { id: 'cfo_advisor', name: 'Morgan', role: 'CFO Advisor', color: '#facc15' },
     { id: 'cmo_advisor', name: 'Taylor', role: 'CMO Advisor', color: '#f472b6' },
-    { id: 'cto_advisor', name: 'Riley', role: 'CTO Advisor', color: '#fb923c' },
+    { id: 'cto_advisor', name: 'Riley',  role: 'CTO Advisor', color: '#fb923c' },
 ];
+
+const advisorState = {};
+const advisorData  = {};
+ADVISORS.forEach(a => { advisorState[a.id] = 'idle'; advisorData[a.id] = null; });
 
 let history = [];
 let busy = false;
+let round = 0;
 
-const chat = document.getElementById('chat');
-const input = document.getElementById('input');
-const sendBtn = document.getElementById('send-btn');
+const transcript = document.getElementById('transcript');
+const msgInput   = document.getElementById('msg-input');
+const sendBtn    = document.getElementById('send-btn');
 
-const MENTION_MAP = {
-    'alex': 'ceo_advisor', 'ceo': 'ceo_advisor',
-    'jordan': 'coo_advisor', 'coo': 'coo_advisor',
-    'morgan': 'cfo_advisor', 'cfo': 'cfo_advisor',
-    'taylor': 'cmo_advisor', 'cmo': 'cmo_advisor',
-    'riley': 'cto_advisor', 'cto': 'cto_advisor',
-};
+function renderSeats() {
+    document.getElementById('seats-strip').innerHTML = ADVISORS.map(a => `
+        <div class="seat idle" id="seat-${a.id}">
+            <div class="seat-top">
+                <div class="seat-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
+                <div>
+                    <div class="seat-name">${a.name}</div>
+                    <div class="seat-label">${a.role}</div>
+                </div>
+            </div>
+            <div class="seat-status" id="status-${a.id}">
+                <div class="status-dot" style="background:${a.color}"></div>Ready
+            </div>
+            <div class="seat-teaser" id="teaser-${a.id}"></div>
+            <button class="floor-btn" onclick="giveFloor('${a.id}')">Give floor →</button>
+        </div>
+    `).join('');
+}
 
-function detectMentions(text) {
-    const words = text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/);
-    const matched = new Set();
-    for (const word of words) {
-        if (MENTION_MAP[word]) matched.add(MENTION_MAP[word]);
+function setSeatState(id, state) {
+    advisorState[id] = state;
+    const seat   = document.getElementById('seat-' + id);
+    const status = document.getElementById('status-' + id);
+    const teaser = document.getElementById('teaser-' + id);
+    const a      = ADVISORS.find(x => x.id === id);
+    seat.className = 'seat ' + state.replace('_', '-');
+    switch(state) {
+        case 'idle':
+            status.innerHTML = `<div class="status-dot" style="background:${a.color}"></div>Ready`;
+            teaser.textContent = ''; break;
+        case 'listening':
+            status.innerHTML = '<span class="listen-dots"><span>•</span><span>•</span><span>•</span></span>';
+            teaser.textContent = ''; break;
+        case 'hand_raised':
+            status.innerHTML = '✋ Wants to speak';
+            teaser.textContent = advisorData[id]?.teaser || ''; break;
+        case 'silent':
+            status.innerHTML = '<div class="status-dot" style="background:var(--muted)"></div>Listening';
+            teaser.textContent = ''; break;
+        case 'speaking':
+            status.innerHTML = '🎙 Speaking';
+            teaser.textContent = ''; break;
     }
-    return matched.size > 0 ? Array.from(matched) : null;
 }
 
-const ADVISOR_NAMES = {
-    'ceo_advisor': 'Alex (CEO)', 'coo_advisor': 'Jordan (COO)',
-    'cfo_advisor': 'Morgan (CFO)', 'cmo_advisor': 'Taylor (CMO)', 'cto_advisor': 'Riley (CTO)'
-};
-
-function updateHint() {
-    const hint = document.getElementById('input-hint');
-    const ids = detectMentions(input.value);
-    if (ids) {
-        const names = ids.map(id => ADVISOR_NAMES[id]).join(', ');
-        hint.innerHTML = `<span style="color:var(--accent2)">↩ ${names} will reply</span>`;
-    } else {
-        hint.textContent = 'Press Enter to send · Shift+Enter for new line';
-    }
-}
-
-// Auto-resize textarea + live mention preview
-input.addEventListener('input', () => {
-    input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
-    updateHint();
-});
-
-input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-
-function scrollBottom() {
-    chat.scrollTop = chat.scrollHeight;
-}
-
-function addUserMsg(text) {
-    // Remove welcome screen on first message
-    const welcome = chat.querySelector('.welcome');
-    if (welcome) welcome.remove();
-
+function addUserBubble(text) {
+    document.querySelector('.welcome')?.remove();
     const div = document.createElement('div');
     div.className = 'msg-user';
-    div.innerHTML = `<div class="bubble">${text.replace(/\\n/g,'<br>')}</div>`;
-    chat.appendChild(div);
-    scrollBottom();
+    div.innerHTML = `<div class="user-bubble">${text.replace(/
+/g,'<br>')}</div>`;
+    transcript.appendChild(div);
+    transcript.scrollTop = transcript.scrollHeight;
 }
 
-function addThinkingCards(targetIds) {
-    const active = targetIds ? ADVISORS.filter(a => targetIds.includes(a.id)) : ADVISORS;
-    const label = active.length === ADVISORS.length
-        ? 'Board responding…'
-        : active.map(a => a.name).join(' & ') + ' responding…';
+function giveFloor(id) {
+    if (advisorState[id] !== 'hand_raised') return;
+    setSeatState(id, 'speaking');
+    const a    = ADVISORS.find(x => x.id === id);
+    const data = advisorData[id];
+    if (!data?.response) return;
 
-    const wrap = document.createElement('div');
-    wrap.className = 'responses';
-    wrap.innerHTML = `<div class="responses-label">${label}</div>
-        <div class="responses-grid" id="responses-grid">
-            ${active.map(a => `
-            <div class="advisor-card thinking" id="card-${a.id}">
-                <div class="card-header">
-                    <div class="card-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
-                    <div>
-                        <div class="card-name">${a.name}</div>
-                        <div class="card-role">${a.role}</div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="skeleton s1"></div>
-                    <div class="skeleton s2"></div>
-                    <div class="skeleton s3"></div>
-                </div>
-            </div>`).join('')}
-        </div>`;
-    chat.appendChild(wrap);
-    scrollBottom();
-    return wrap;
-}
+    const entryId = `entry-${id}-${round}`;
+    if (document.getElementById(entryId)) {
+        document.getElementById(entryId).scrollIntoView({behavior:'smooth'});
+        return;
+    }
+    const div = document.createElement('div');
+    div.className = 'advisor-entry';
+    div.id = entryId;
+    div.style.borderLeftColor = a.color;
+    div.innerHTML = `
+        <div class="entry-header">
+            <div class="entry-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
+            <div><div class="entry-name">${a.name}</div><div class="entry-role">${a.role}</div></div>
+        </div>
+        <div class="entry-text">${data.response}</div>`;
+    transcript.appendChild(div);
+    transcript.scrollTop = transcript.scrollHeight;
 
-function fillCard(advisorId, text) {
-    const card = document.getElementById('card-' + advisorId);
-    if (!card) return;
-    card.classList.remove('thinking');
-    card.querySelector('.card-body').textContent = text;
-    scrollBottom();
+    // Save to history once
+    if (!history.find(h => h.role === 'assistant' && h.content === data.response)) {
+        history.push({ role: 'assistant', content: data.response });
+        if (history.length > 8) history = history.slice(-8);
+    }
 }
 
 async function sendMessage() {
-    const text = input.value.trim();
+    const text = msgInput.value.trim();
     if (!text || busy) return;
+    busy = true; sendBtn.disabled = true;
+    msgInput.value = ''; msgInput.style.height = 'auto';
+    round++;
 
-    busy = true;
-    sendBtn.disabled = true;
-    input.value = '';
-    input.style.height = 'auto';
-
-    const targetIds = detectMentions(text);
-    addUserMsg(text);
-    const wrap = addThinkingCards(targetIds);
-
-    // Add user turn to history
+    addUserBubble(text);
+    ADVISORS.forEach(a => setSeatState(a.id, 'listening'));
     history.push({ role: 'user', content: text });
 
     try {
         const res = await fetch('/api/meeting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history: history.slice(0, -1), advisors: targetIds })
+            body: JSON.stringify({ message: text, history: history.slice(0, -1) })
         });
         const data = await res.json();
 
-        // Fill only the cards that were created and returned
-        let combinedReply = '';
-        Object.entries(data).forEach(([advisorId, val]) => {
-            fillCard(advisorId, val.reply || 'No response.');
-            if (!combinedReply) combinedReply = val.reply || '';
+        let anyRaised = false;
+        ADVISORS.forEach(a => {
+            const val = data[a.id];
+            advisorData[a.id] = val || null;
+            if (val?.wants_to_speak) { setSeatState(a.id, 'hand_raised'); anyRaised = true; }
+            else setSeatState(a.id, 'silent');
         });
+        // Fallback: if nobody raised hand show all
+        if (!anyRaised) ADVISORS.forEach(a => { if(data[a.id]) setSeatState(a.id, 'hand_raised'); });
 
-        // Save one turn of history (keeps context, avoids bloat)
-        history.push({ role: 'assistant', content: combinedReply });
-        if (history.length > 6) history = history.slice(-6); // keep last 3 turns
-
-        wrap.querySelector('.responses-label').textContent = 'Board responded';
-    } catch (err) {
-        wrap.querySelector('.responses-label').textContent = 'Error — please try again';
-        wrap.querySelectorAll('.advisor-card').forEach(c => {
-            c.classList.remove('thinking');
-            c.querySelector('.card-body').textContent = 'Something went wrong. Please try again.';
-        });
+    } catch(err) {
+        ADVISORS.forEach(a => setSeatState(a.id, 'idle'));
         console.error(err);
     }
-
-    busy = false;
-    sendBtn.disabled = false;
-    input.focus();
+    busy = false; sendBtn.disabled = false; msgInput.focus();
 }
+
+msgInput.addEventListener('input', () => {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+});
+msgInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+renderSeats();
 </script>
 </body>
 </html>
@@ -684,36 +682,54 @@ def meeting():
     return render_template_string(MEETING_HTML)
 
 
+MEETING_SUFFIX = (
+    "\n\nYou are attending a live board meeting. The founder just spoke. "
+    "Decide honestly whether their message is relevant to your specific domain of expertise. "
+    "Respond ONLY with valid JSON — no extra text, no markdown:\n"
+    '{"wants_to_speak": true, "teaser": "one short sentence hinting at your advice", "response": "your full advice in plain prose"}\n'
+    "or if not relevant to your domain:\n"
+    '{"wants_to_speak": false, "teaser": "", "response": ""}\n'
+    "Be selective. Only raise your hand if you genuinely have something useful to add."
+)
+
+
+def parse_advisor_json(raw):
+    try:
+        return json.loads(raw)
+    except Exception:
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except Exception:
+                pass
+    return {"wants_to_speak": True, "teaser": "I have thoughts on this.", "response": raw}
+
+
 @app.route("/api/meeting", methods=["POST"])
 def meeting_chat():
     data = request.json
     message = data.get("message", "")
     history = data.get("history", [])
-    target_ids = data.get("advisors", None)  # None means all
 
     messages = history + [{"role": "user", "content": message}]
-
-    clients_to_query = {
-        cid: cfg for cid, cfg in CLIENTS.items()
-        if target_ids is None or cid in target_ids
-    }
 
     def ask_advisor(client_id, client_config):
         client = anthropic.Anthropic()
         resp = client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=512,  # shorter for chat speed
-            system=client_config["system_prompt"],
+            max_tokens=700,
+            system=client_config["system_prompt"] + MEETING_SUFFIX,
             messages=messages,
         )
-        return client_id, resp.content[0].text
+        return client_id, parse_advisor_json(resp.content[0].text.strip())
 
     results = {}
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(ask_advisor, cid, cfg): cid for cid, cfg in clients_to_query.items()}
+        futures = {executor.submit(ask_advisor, cid, cfg): cid for cid, cfg in CLIENTS.items()}
         for future in as_completed(futures):
-            client_id, reply = future.result()
-            results[client_id] = {"reply": reply}
+            client_id, parsed = future.result()
+            results[client_id] = parsed
 
     return jsonify(results)
 
