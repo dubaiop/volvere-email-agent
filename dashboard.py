@@ -490,7 +490,24 @@ MEETING_HTML = """
     </div>
 </header>
 
-<div class="seats-strip" id="seats-strip"></div>
+<div class="seats-strip" id="seats-strip">
+{% for a in advisors %}
+<div class="seat idle" id="seat-{{ a.id }}">
+    <div class="seat-top">
+        <div class="seat-avatar" style="background:{{ a.color }}">{{ a.role[:3] }}</div>
+        <div>
+            <div class="seat-name">{{ a.name }}</div>
+            <div class="seat-label">{{ a.role }}</div>
+        </div>
+    </div>
+    <div class="seat-status" id="status-{{ a.id }}">
+        <div class="status-dot" style="background:{{ a.color }}"></div>Ready
+    </div>
+    <div class="seat-teaser" id="teaser-{{ a.id }}"></div>
+    <button class="floor-btn" id="floor-{{ a.id }}" onclick="giveFloor('{{ a.id }}')">Give floor &rarr;</button>
+</div>
+{% endfor %}
+</div>
 
 <div id="transcript">
     <div class="welcome">
@@ -529,24 +546,7 @@ const transcript = document.getElementById('transcript');
 const msgInput   = document.getElementById('msg-input');
 const sendBtn    = document.getElementById('send-btn');
 
-function renderSeats() {
-    document.getElementById('seats-strip').innerHTML = ADVISORS.map(a => `
-        <div class="seat idle" id="seat-${a.id}">
-            <div class="seat-top">
-                <div class="seat-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
-                <div>
-                    <div class="seat-name">${a.name}</div>
-                    <div class="seat-label">${a.role}</div>
-                </div>
-            </div>
-            <div class="seat-status" id="status-${a.id}">
-                <div class="status-dot" style="background:${a.color}"></div>Ready
-            </div>
-            <div class="seat-teaser" id="teaser-${a.id}"></div>
-            <button class="floor-btn" onclick="giveFloor('${a.id}')">Give floor →</button>
-        </div>
-    `).join('');
-}
+// seats rendered server-side
 
 function setSeatState(id, state) {
     advisorState[id] = state;
@@ -659,8 +659,6 @@ msgInput.addEventListener('input', () => {
 msgInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
-
-renderSeats();
 </script>
 </body>
 </html>
@@ -677,9 +675,17 @@ def index():
     return render_template_string(DASHBOARD_HTML, emails=emails, stats=stats)
 
 
+MEETING_ADVISORS = [
+    {"id": "ceo_advisor", "name": "Alex",   "role": "CEO Advisor", "color": "#60a5fa"},
+    {"id": "coo_advisor", "name": "Jordan", "role": "COO Advisor", "color": "#34d399"},
+    {"id": "cfo_advisor", "name": "Morgan", "role": "CFO Advisor", "color": "#facc15"},
+    {"id": "cmo_advisor", "name": "Taylor", "role": "CMO Advisor", "color": "#f472b6"},
+    {"id": "cto_advisor", "name": "Riley",  "role": "CTO Advisor", "color": "#fb923c"},
+]
+
 @app.route("/meeting")
 def meeting():
-    return render_template_string(MEETING_HTML)
+    return render_template_string(MEETING_HTML, advisors=MEETING_ADVISORS)
 
 
 MEETING_SUFFIX = (
