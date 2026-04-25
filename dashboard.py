@@ -496,7 +496,7 @@ MEETING_HTML = """
         <textarea id="input" rows="1" placeholder="Ask your board a question…"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
     </div>
-    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    <div class="input-hint" id="input-hint">Press Enter to send · Shift+Enter for new line</div>
 </div>
 
 <script>
@@ -524,19 +524,35 @@ const MENTION_MAP = {
 };
 
 function detectMentions(text) {
-    const lower = text.toLowerCase();
+    const words = text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/);
     const matched = new Set();
-    for (const [keyword, id] of Object.entries(MENTION_MAP)) {
-        const re = new RegExp(`\\b${keyword}\\b`);
-        if (re.test(lower)) matched.add(id);
+    for (const word of words) {
+        if (MENTION_MAP[word]) matched.add(MENTION_MAP[word]);
     }
     return matched.size > 0 ? Array.from(matched) : null;
 }
 
-// Auto-resize textarea
+const ADVISOR_NAMES = {
+    'ceo_advisor': 'Alex (CEO)', 'coo_advisor': 'Jordan (COO)',
+    'cfo_advisor': 'Morgan (CFO)', 'cmo_advisor': 'Taylor (CMO)', 'cto_advisor': 'Riley (CTO)'
+};
+
+function updateHint() {
+    const hint = document.getElementById('input-hint');
+    const ids = detectMentions(input.value);
+    if (ids) {
+        const names = ids.map(id => ADVISOR_NAMES[id]).join(', ');
+        hint.innerHTML = `<span style="color:var(--accent2)">↩ ${names} will reply</span>`;
+    } else {
+        hint.textContent = 'Press Enter to send · Shift+Enter for new line';
+    }
+}
+
+// Auto-resize textarea + live mention preview
 input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    updateHint();
 });
 
 input.addEventListener('keydown', e => {
