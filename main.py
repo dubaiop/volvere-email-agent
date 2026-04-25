@@ -23,6 +23,12 @@ def run():
                 continue
 
             for email_data in emails:
+                # Skip automated/no-reply emails
+                sender = email_data["sender"].lower()
+                if any(x in sender for x in ["no-reply", "noreply", "sendgrid", "mailer-daemon"]):
+                    print(f"  Skipping automated email from: {email_data['sender']}")
+                    continue
+
                 print(f"  Processing: {email_data['subject']}")
                 reply = generate_reply(client_id, client_config, email_data)
                 send_reply(client_config, email_data, reply)
