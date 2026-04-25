@@ -29,7 +29,7 @@ def run():
                     print(f"  Skipping automated email from: {email_data['sender']}")
                     continue
 
-                if already_processed(client_id, email_data["sender"], email_data["subject"]):
+                if already_processed(client_id, email_data["sender"], email_data["body"]):
                     print(f"  Skipping duplicate: {email_data['subject']}")
                     continue
 

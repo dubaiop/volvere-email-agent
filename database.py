@@ -136,26 +136,26 @@ def get_all_emails(limit: int = 100) -> list[dict]:
             return [dict(r) for r in rows]
 
 
-def already_processed(client_id: str, sender: str, subject: str) -> bool:
-    """Returns True if this sender+subject was already processed in the last 24 hours."""
+def already_processed(client_id: str, sender: str, body: str) -> bool:
+    """Returns True if this exact email body was already processed in the last 24 hours."""
     if DATABASE_URL:
         with _conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT 1 FROM processed_emails
-                    WHERE client_id = %s AND sender = %s AND subject = %s
+                    WHERE client_id = %s AND sender = %s AND body = %s
                     AND processed_at > NOW() - INTERVAL '24 hours'
                     LIMIT 1
-                """, (client_id, sender, subject))
+                """, (client_id, sender, body))
                 return cur.fetchone() is not None
     else:
         with _conn() as conn:
             row = conn.execute("""
                 SELECT 1 FROM processed_emails
-                WHERE client_id = ? AND sender = ? AND subject = ?
+                WHERE client_id = ? AND sender = ? AND body = ?
                 AND processed_at > datetime('now', '-24 hours')
                 LIMIT 1
-            """, (client_id, sender, subject)).fetchone()
+            """, (client_id, sender, body)).fetchone()
             return row is not None
 
 
