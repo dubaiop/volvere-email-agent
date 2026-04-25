@@ -622,20 +622,24 @@ async function sendMessage() {
         });
         const data = await res.json();
 
-        // Build combined assistant content for memory (use CEO reply as representative)
-        const firstReply = Object.values(data)[0]?.reply || '';
-        history.push({ role: 'assistant', content: firstReply });
-
-        // Fill each card
-        ADVISORS.forEach(a => {
-            const reply = data[a.id]?.reply || 'No response.';
-            fillCard(a.id, reply);
+        // Fill only the cards that were created and returned
+        let combinedReply = '';
+        Object.entries(data).forEach(([advisorId, val]) => {
+            fillCard(advisorId, val.reply || 'No response.');
+            if (!combinedReply) combinedReply = val.reply || '';
         });
 
-        // Update label
+        // Save one turn of history (keeps context, avoids bloat)
+        history.push({ role: 'assistant', content: combinedReply });
+        if (history.length > 6) history = history.slice(-6); // keep last 3 turns
+
         wrap.querySelector('.responses-label').textContent = 'Board responded';
     } catch (err) {
         wrap.querySelector('.responses-label').textContent = 'Error — please try again';
+        wrap.querySelectorAll('.advisor-card').forEach(c => {
+            c.classList.remove('thinking');
+            c.querySelector('.card-body').textContent = 'Something went wrong. Please try again.';
+        });
         console.error(err);
     }
 
@@ -682,7 +686,7 @@ def meeting_chat():
         client = anthropic.Anthropic()
         resp = client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=1024,
+            max_tokens=512,  # shorter for chat speed
             system=client_config["system_prompt"],
             messages=messages,
         )
