@@ -589,9 +589,11 @@ function giveFloor(id) {
     setSeatState(id, 'speaking');
     const a    = ADVISORS.find(x => x.id === id);
     const data = advisorData[id];
-    if (!data?.response) return;
+    if (!data) return;
 
-    const entryId = `entry-${id}-${round}`;
+    const responseText = data.response || data.teaser || 'Hello! Ask me something specific and I will give you my full take.';
+
+    const entryId = 'entry-' + id + '-' + round;
     if (document.getElementById(entryId)) {
         document.getElementById(entryId).scrollIntoView({behavior:'smooth'});
         return;
@@ -600,18 +602,16 @@ function giveFloor(id) {
     div.className = 'advisor-entry';
     div.id = entryId;
     div.style.borderLeftColor = a.color;
-    div.innerHTML = `
-        <div class="entry-header">
-            <div class="entry-avatar" style="background:${a.color}">${a.role.slice(0,3)}</div>
-            <div><div class="entry-name">${a.name}</div><div class="entry-role">${a.role}</div></div>
-        </div>
-        <div class="entry-text">${data.response}</div>`;
+    div.innerHTML = '<div class="entry-header">'
+        + '<div class="entry-avatar" style="background:' + a.color + '">' + a.role.slice(0,3) + '</div>'
+        + '<div><div class="entry-name">' + a.name + '</div><div class="entry-role">' + a.role + '</div></div>'
+        + '</div>'
+        + '<div class="entry-text">' + responseText + '</div>';
     transcript.appendChild(div);
     transcript.scrollTop = transcript.scrollHeight;
 
-    // Save to history once
-    if (!history.find(h => h.role === 'assistant' && h.content === data.response)) {
-        history.push({ role: 'assistant', content: data.response });
+    if (responseText && !history.find(function(h) { return h.role === 'assistant' && h.content === responseText; })) {
+        history.push({ role: 'assistant', content: responseText });
         if (history.length > 8) history = history.slice(-8);
     }
 }
@@ -693,10 +693,11 @@ MEETING_SUFFIX = (
     "\n\nYou are attending a live board meeting. The founder just spoke. "
     "Decide honestly whether their message is relevant to your specific domain of expertise. "
     "Respond ONLY with valid JSON — no extra text, no markdown:\n"
-    '{"wants_to_speak": true, "teaser": "one short sentence hinting at your advice", "response": "your full advice in plain prose"}\n'
+    '{"wants_to_speak": true, "teaser": "one short sentence hinting at your advice", "response": "your full advice in 2-4 sentences of plain prose"}\n'
     "or if not relevant to your domain:\n"
     '{"wants_to_speak": false, "teaser": "", "response": ""}\n'
-    "Be selective. Only raise your hand if you genuinely have something useful to add."
+    "IMPORTANT: If wants_to_speak is true, response MUST be non-empty — always give substantive advice. "
+    "Even for a greeting, introduce yourself and ask what you can help with today."
 )
 
 
