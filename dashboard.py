@@ -554,17 +554,18 @@ function setSeatState(id, state) {
     const status = document.getElementById('status-' + id);
     const teaser = document.getElementById('teaser-' + id);
     const a      = ADVISORS.find(x => x.id === id);
+    if (!seat || !status || !teaser || !a) return; // guard against missing elements
     seat.className = 'seat ' + state.replace('_', '-');
     switch(state) {
         case 'idle':
-            status.innerHTML = `<div class="status-dot" style="background:${a.color}"></div>Ready`;
+            status.innerHTML = '<div class="status-dot" style="background:' + a.color + '"></div>Ready';
             teaser.textContent = ''; break;
         case 'listening':
             status.innerHTML = '<span class="listen-dots"><span>•</span><span>•</span><span>•</span></span>';
             teaser.textContent = ''; break;
         case 'hand_raised':
             status.innerHTML = '✋ Wants to speak';
-            teaser.textContent = advisorData[id]?.teaser || ''; break;
+            teaser.textContent = (advisorData[id] && advisorData[id].teaser) || ''; break;
         case 'silent':
             status.innerHTML = '<div class="status-dot" style="background:var(--muted)"></div>Listening';
             teaser.textContent = ''; break;
@@ -624,10 +625,11 @@ async function sendMessage() {
     round++;
 
     addUserBubble(text);
-    ADVISORS.forEach(a => setSeatState(a.id, 'listening'));
     history.push({ role: 'user', content: text });
 
     try {
+        ADVISORS.forEach(a => setSeatState(a.id, 'listening'));
+
         const res = await fetch('/api/meeting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -639,17 +641,17 @@ async function sendMessage() {
         ADVISORS.forEach(a => {
             const val = data[a.id];
             advisorData[a.id] = val || null;
-            if (val?.wants_to_speak) { setSeatState(a.id, 'hand_raised'); anyRaised = true; }
+            if (val && val.wants_to_speak) { setSeatState(a.id, 'hand_raised'); anyRaised = true; }
             else setSeatState(a.id, 'silent');
         });
-        // Fallback: if nobody raised hand show all
         if (!anyRaised) ADVISORS.forEach(a => { if(data[a.id]) setSeatState(a.id, 'hand_raised'); });
 
     } catch(err) {
         ADVISORS.forEach(a => setSeatState(a.id, 'idle'));
         console.error(err);
+    } finally {
+        busy = false; sendBtn.disabled = false; msgInput.focus();
     }
-    busy = false; sendBtn.disabled = false; msgInput.focus();
 }
 
 msgInput.addEventListener('input', () => {
