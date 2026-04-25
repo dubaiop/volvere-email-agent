@@ -6,7 +6,7 @@ from config import CLIENTS
 from email_reader import fetch_unread_emails
 from agent import generate_reply
 from email_sender import send_reply
-from database import init_db, log_email
+from database import init_db, log_email, already_processed
 
 
 def run():
@@ -27,6 +27,10 @@ def run():
                 sender = email_data["sender"].lower()
                 if any(x in sender for x in ["no-reply", "noreply", "sendgrid", "mailer-daemon"]):
                     print(f"  Skipping automated email from: {email_data['sender']}")
+                    continue
+
+                if already_processed(client_id, email_data["sender"], email_data["subject"]):
+                    print(f"  Skipping duplicate: {email_data['subject']}")
                     continue
 
                 print(f"  Processing: {email_data['subject']}")

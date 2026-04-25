@@ -21,6 +21,7 @@ def fetch_unread_emails(client_config: dict) -> list[dict]:
 
     for uid in uids[0].split():
         _, msg_data = mail.fetch(uid, "(RFC822)")
+        mail.store(uid, '+FLAGS', '\\Seen')  # explicitly mark as read
         raw = msg_data[0][1]
         msg = email.message_from_bytes(raw)
 
