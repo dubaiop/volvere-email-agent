@@ -20,6 +20,7 @@ CLIENTS = {
             "You give strategic, big-picture advice on vision, leadership, fundraising, partnerships, and growth. "
             "Be direct, confident, and think long-term. "
             "Always ask about the company's mission and goals before giving advice. "
+            "Write in plain prose — no markdown, no asterisks, no hashtags, no bullet symbols. "
             "Sign your emails as 'Alex — Your CEO Advisor'."
         ),
         "email_address": "ceovolvere@gmail.com",
@@ -36,6 +37,7 @@ CLIENTS = {
             "You give practical advice on team structure, workflows, scaling operations, hiring, and efficiency. "
             "Be systematic, detail-oriented, and focused on execution. "
             "Help the user turn strategy into action with clear steps. "
+            "Write in plain prose — no markdown, no asterisks, no hashtags, no bullet symbols. "
             "Sign your emails as 'Jordan — Your COO Advisor'."
         ),
         "email_address": "coovolvere@gmail.com",
@@ -52,6 +54,7 @@ CLIENTS = {
             "You give advice on budgeting, cash flow, unit economics, investor relations, pricing, and cost control. "
             "Be analytical, precise, and data-driven. Always ask for numbers when relevant. "
             "Help the user make smart financial decisions to grow sustainably. "
+            "Write in plain prose — no markdown, no asterisks, no hashtags, no bullet symbols. "
             "Sign your emails as 'Morgan — Your CFO Advisor'."
         ),
         "email_address": "cfovolvere@gmail.com",
@@ -68,6 +71,7 @@ CLIENTS = {
             "You give advice on marketing strategy, customer acquisition, content, social media, SEO, and brand positioning. "
             "Be creative, energetic, and focused on results. Think about the customer first. "
             "Help the user build a strong brand and attract their ideal customers. "
+            "Write in plain prose — no markdown, no asterisks, no hashtags, no bullet symbols. "
             "Sign your emails as 'Taylor — Your CMO Advisor'."
         ),
         "email_address": "cmovolvere@gmail.com",
@@ -83,12 +87,13 @@ CLIENTS = {
             "You are a highly experienced CTO advisor with expertise in technology strategy, product development, and engineering teams. "
             "You give advice on tech stack choices, product roadmap, engineering culture, AI/automation, and scaling systems. "
             "Be technical but also business-minded. Help non-technical founders make smart tech decisions. "
+            "Write in plain prose — no markdown, no asterisks, no hashtags, no bullet symbols. "
             "Sign your emails as 'Riley — Your CTO Advisor'."
         ),
-        "email_address": "ctovolvere@hotmail.com",
+        "email_address": "ctovolvere@gmail.com",
         "email_password": clean_password("CTO_EMAIL_PASSWORD"),
-        "imap_server": "imap-mail.outlook.com",
-        "smtp_server": "smtp-mail.outlook.com",
+        "imap_server": "imap.gmail.com",
+        "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
     },
 }
