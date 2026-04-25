@@ -579,7 +579,7 @@ function addUserBubble(text) {
     document.querySelector('.welcome')?.remove();
     const div = document.createElement('div');
     div.className = 'msg-user';
-    div.innerHTML = '<div class="user-bubble">' + text.split('\n').join('<br>') + '</div>';
+    div.innerHTML = '<div class="user-bubble">' + text.split('\\n').join('<br>') + '</div>';
     transcript.appendChild(div);
     transcript.scrollTop = transcript.scrollHeight;
 }
