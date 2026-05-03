@@ -248,7 +248,7 @@ DASHBOARD_HTML = """
             data-subject="{{ e.subject | lower }}"
             data-sender="{{ e.sender | lower }}"
             data-reply="{{ e.reply | lower }}"
-            onclick="openModal({{ e.id }},'{{ e.client_name }}','{{ e.sender|replace("'","\\'") }}','{{ e.subject|replace("'","\\'") }}','{{ e.processed_at }}',{{ e.body|tojson }},{{ e.reply|tojson }})">
+            onclick="openModal({{ e.id }})">
             <td><span class="badge badge-{{ role }}"><span class="badge-dot"></span>{{ e.client_name }}</span></td>
             <td>
                 <div class="sender">{{ e.sender.split('<')[0].strip() }}</div>
@@ -327,14 +327,20 @@ DASHBOARD_HTML = """
     });
     applyFilters();
 
-    function openModal(id, advisor, sender, subject, time, body, reply) {
-        const role = advisor.split(' ')[0].toLowerCase();
-        document.getElementById('modal-badge').innerHTML = `<span class="badge badge-${role}"><span class="badge-dot"></span>${advisor}</span>`;
-        document.getElementById('modal-subject').textContent = subject;
-        document.getElementById('modal-sender').textContent = sender;
-        document.getElementById('modal-time').textContent = time;
-        document.getElementById('modal-reply').textContent = reply;
-        document.getElementById('modal-body-text').textContent = body;
+    const EMAIL_DATA = {{ emails | tojson }};
+    const EMAIL_MAP = {};
+    EMAIL_DATA.forEach(e => { EMAIL_MAP[e.id] = e; });
+
+    function openModal(id) {
+        const e = EMAIL_MAP[id];
+        if (!e) return;
+        const role = e.client_name.split(' ')[0].toLowerCase();
+        document.getElementById('modal-badge').innerHTML = `<span class="badge badge-${role}"><span class="badge-dot"></span>${e.client_name}</span>`;
+        document.getElementById('modal-subject').textContent = e.subject;
+        document.getElementById('modal-sender').textContent = e.sender;
+        document.getElementById('modal-time').textContent = e.processed_at;
+        document.getElementById('modal-reply').textContent = e.reply;
+        document.getElementById('modal-body-text').textContent = e.body;
         switchTab('reply');
         document.getElementById('overlay').classList.add('open');
     }
