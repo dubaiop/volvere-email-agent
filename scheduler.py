@@ -17,7 +17,7 @@ def job():
 
 
 # Schedule to run every 10 minutes
-schedule.every(10).minutes.do(job)
+schedule.every(5).minutes.do(job)
 
 print("Email agent scheduler started. Runs every 10 minutes.")
 print("Press Ctrl+C to stop.\n")

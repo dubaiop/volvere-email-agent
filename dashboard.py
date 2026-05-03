@@ -20,7 +20,7 @@ app = Flask(__name__)
 def run_scheduler():
     from main import run
     run()
-    schedule.every(10).minutes.do(run)
+    schedule.every(5).minutes.do(run)
     while True:
         schedule.run_pending()
         time.sleep(30)
