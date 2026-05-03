@@ -144,7 +144,7 @@ def already_processed(client_id: str, sender: str, body: str) -> bool:
                 cur.execute("""
                     SELECT 1 FROM processed_emails
                     WHERE client_id = %s AND sender = %s AND body = %s
-                    AND processed_at > NOW() - INTERVAL '24 hours'
+                    AND processed_at::timestamp > NOW() - INTERVAL '24 hours'
                     LIMIT 1
                 """, (client_id, sender, body))
                 return cur.fetchone() is not None
