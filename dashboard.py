@@ -1174,11 +1174,15 @@ OPERATIONS_HTML = """
             });
             const data = await res.json();
             document.getElementById('typing').classList.remove('show');
-            addMessage('agent', data.reply, 'Sam — GTM Engineer');
-            history.push({ role: 'assistant', content: data.reply });
+            if (data.error) {
+                addMessage('agent', '⚠️ ' + data.error, 'Sam');
+            } else {
+                addMessage('agent', data.reply || '(no response)', 'Sam — GTM Engineer');
+                history.push({ role: 'assistant', content: data.reply });
+            }
         } catch(e) {
             document.getElementById('typing').classList.remove('show');
-            addMessage('agent', 'Error: ' + e.message, 'Sam');
+            addMessage('agent', '⚠️ ' + e.message, 'Sam');
         }
     }
 
@@ -1186,7 +1190,7 @@ OPERATIONS_HTML = """
         const msgs = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-        const bubbleContent = type === 'agent' ? marked.parse(text) : escapeHtml(text);
+        const bubbleContent = type === 'agent' ? marked.parse(text || '') : escapeHtml(text || '');
         const copyBtn = type === 'agent'
             ? `<button onclick="copyText(this, ${JSON.stringify(text)})" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
             : '';
