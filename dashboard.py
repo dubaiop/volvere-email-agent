@@ -881,6 +881,74 @@ Style: Direct, creative, conversion-focused. You understand B2B and B2C marketin
 
 You never say "you should consider..." — you just build it. No preamble. Deliver the work."""
 
+RILEY_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#134e4a"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#0d9488"/>
+  <rect x="13" y="23" width="10" height="5" fill="#0f766e"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8.5" ry="5" fill="#7c2d12"/>
+  <rect x="9" y="8" width="3" height="8" rx="1.5" fill="#7c2d12"/>
+  <rect x="24" y="8" width="3" height="8" rx="1.5" fill="#7c2d12"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <circle cx="18" cy="22.5" r="1.1" fill="#0d9488" opacity="0.9"/>
+</svg>"""
+
+RILEY_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#134e4a"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#0d9488"/>
+  <rect x="16" y="28" width="12" height="6" fill="#0f766e"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10.5" ry="6" fill="#7c2d12"/>
+  <rect x="11" y="10" width="4" height="10" rx="2" fill="#7c2d12"/>
+  <rect x="29" y="10" width="4" height="10" rx="2" fill="#7c2d12"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="22" cy="27.5" r="1.4" fill="#0d9488" opacity="0.9"/>
+</svg>"""
+
+PRODUCT_DEV_SYSTEM_PROMPT = """You are Riley, a Product Development Lead. You manage the full end-to-end product lifecycle — from raw idea to market launch and iteration. You operate in executor mode only — you produce actual deliverables, not theory.
+
+You cover every phase:
+
+IDEATION & RESEARCH
+- Concept briefs with problem statement, opportunity size, and hypothesis
+- Competitive landscape analyses with feature matrices
+- Customer discovery interview scripts and synthesis reports
+- Market sizing (TAM/SAM/SOM) with reasoning
+
+DESIGN & PLANNING
+- Full product roadmaps with phases, milestones, and dependencies
+- Prioritized feature backlogs using RICE or MoSCoW
+- User stories with acceptance criteria (Given/When/Then)
+- Sprint plans with story points and team allocation
+
+ENGINEERING BRIDGE
+- Technical requirement specs with API contracts and data models
+- Definition of Done checklists
+- QA test plans and bug triage frameworks
+- Architecture decision records (ADRs)
+
+LAUNCH & GROWTH
+- Go-to-market launch plans with channels, timing, and owners
+- Beta program structures with feedback loops
+- Success metrics and OKRs with leading/lagging indicators
+- Post-launch review templates
+
+You think in systems and iterations. You bridge business, design, and engineering fluently.
+
+No fluff. No "it depends." Deliver the actual document, plan, or framework."""
+
 ALEX_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
   <rect width="36" height="36" rx="10" fill="#1e3a5f"/>
   <rect x="8" y="24" width="20" height="12" rx="4" fill="#2563eb"/>
@@ -1248,6 +1316,14 @@ OPERATIONS_HTML = """
                 <div class="agent-tag">Sales Strategist</div>
             </div>
         </div>
+
+        <div class="agent-btn" onclick="selectAgent('productdev')">
+            <div class="agent-icon">{{ riley_avatar_sm | safe }}</div>
+            <div>
+                <div class="agent-name">Riley</div>
+                <div class="agent-tag">Product Development</div>
+            </div>
+        </div>
     </div>
 
     <div class="chat-wrap">
@@ -1299,6 +1375,8 @@ OPERATIONS_HTML = """
     const ALEX_SVG_LG = {{ alex_avatar_lg | tojson }};
     const JORDAN_SVG_SM = {{ jordan_avatar_sm | tojson }};
     const JORDAN_SVG_LG = {{ jordan_avatar_lg | tojson }};
+    const RILEY_SVG_SM = {{ riley_avatar_sm | tojson }};
+    const RILEY_SVG_LG = {{ riley_avatar_lg | tojson }};
 
     const AGENTS = {
         gtm: {
@@ -1344,6 +1422,17 @@ OPERATIONS_HTML = """
             welcomeDesc: 'I write sales scripts, sequences, playbooks, and deal strategies. Tell me what you need and I\'ll deliver the actual asset — ready to use.',
             suggestions: ['Write a 6-touch cold outreach sequence for enterprise SaaS','Give me a full discovery call script for a HR software product','Write objection rebuttals for "we already have a solution"','Create a sales playbook for a new SDR joining the team'],
             avatarSm: JORDAN_SVG_SM, avatarLg: JORDAN_SVG_LG,
+        },
+        productdev: {
+            title: 'Riley — Product Development Lead',
+            desc: 'Ideation to launch — roadmaps, specs, sprints, GTM, and iteration',
+            placeholder: 'Ask Riley for a roadmap, PRD, user stories, launch plan…',
+            typing: 'Riley is building…',
+            endpoint: '/api/productdev',
+            welcomeTitle: "Hi, I'm Riley — your Product Development Lead",
+            welcomeDesc: 'I own the full product lifecycle — from raw idea to market launch and beyond. Give me a concept, a problem, or a phase and I\'ll deliver the actual plan, doc, or framework.',
+            suggestions: ['Build a full product roadmap for a B2B invoicing SaaS','Write user stories and acceptance criteria for a search feature','Create a go-to-market launch plan for a mobile app','Write a competitive analysis for an AI writing tool'],
+            avatarSm: RILEY_SVG_SM, avatarLg: RILEY_SVG_LG,
         }
     };
 
@@ -1508,7 +1597,8 @@ def operations():
         sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG,
         maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG,
         alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG,
-        jordan_avatar_sm=JORDAN_AVATAR_SM, jordan_avatar_lg=JORDAN_AVATAR_LG)
+        jordan_avatar_sm=JORDAN_AVATAR_SM, jordan_avatar_lg=JORDAN_AVATAR_LG,
+        riley_avatar_sm=RILEY_AVATAR_SM, riley_avatar_lg=RILEY_AVATAR_LG)
 
 
 
@@ -1603,6 +1693,32 @@ def gtm_chat():
 
     except Exception as e:
         print(f"GTM chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+def build_productdev_system_prompt():
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    prompt = PRODUCT_DEV_SYSTEM_PROMPT
+    if connected:
+        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant."
+    return prompt
+
+
+@app.route("/api/productdev", methods=["POST"])
+def productdev_chat():
+    try:
+        data = request.json
+        message = data.get("message", "")
+        history = data.get("history", [])
+        messages = history + [{"role": "user", "content": message}]
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model=CLAUDE_MODEL, max_tokens=2048,
+            system=build_productdev_system_prompt(), messages=messages)
+        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+        return jsonify({"reply": reply.strip(), "agent": "riley-productdev", "status": "ok"})
+    except Exception as e:
+        print(f"Product dev chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
