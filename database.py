@@ -26,6 +26,12 @@ def init_db():
         with _conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
+                    CREATE TABLE IF NOT EXISTS app_settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )
+                """)
+                cur.execute("""
                     CREATE TABLE IF NOT EXISTS processed_emails (
                         id SERIAL PRIMARY KEY,
                         client_id TEXT NOT NULL,
@@ -50,6 +56,12 @@ def init_db():
             conn.commit()
     else:
         with _conn() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS app_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            """)
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS processed_emails (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,3 +187,34 @@ def get_stats() -> dict:
         "total": total,
         "by_client": [{"name": r[0], "count": r[1]} for r in clients],
     }
+
+
+def get_setting(key: str, default: str = "") -> str:
+    try:
+        if DATABASE_URL:
+            with _conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT value FROM app_settings WHERE key = %s", (key,))
+                    row = cur.fetchone()
+                    return row[0] if row else default
+        else:
+            with _conn() as conn:
+                row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+                return row[0] if row else default
+    except Exception:
+        return default
+
+
+def set_setting(key: str, value: str):
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO app_settings (key, value) VALUES (%s, %s)
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                """, (key, value))
+            conn.commit()
+    else:
+        with _conn() as conn:
+            conn.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", (key, value))
+            conn.commit()

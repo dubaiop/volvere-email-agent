@@ -12,7 +12,7 @@ import time
 import anthropic
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
-from database import get_all_emails, get_stats, init_db
+from database import get_all_emails, get_stats, init_db, get_setting, set_setting
 from config import CLIENTS, CLAUDE_MODEL
 
 app = Flask(__name__)
@@ -977,11 +977,38 @@ OPERATIONS_HTML = """
         </div>
     </div>
     <div class="nav-links">
+        <button class="nav-btn" onclick="openSettings()" style="cursor:pointer;">⚙️ Settings</button>
         <a href="/api-docs" class="nav-btn">🔑 API Docs</a>
         <a href="/" class="nav-btn">📧 Email Dashboard</a>
         <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
     </div>
 </header>
+
+<!-- Settings Modal -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:#1a1a24;border:1px solid #2e2e3e;border-radius:18px;width:480px;max-width:95vw;padding:28px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+            <div>
+                <div style="font-size:17px;font-weight:600;">Settings</div>
+                <div style="font-size:12px;color:#6b6b80;margin-top:2px;">Configure your GTM API key</div>
+            </div>
+            <div onclick="closeSettings()" style="cursor:pointer;width:32px;height:32px;background:#22222f;border:1px solid #2e2e3e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b6b80;">✕</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px;">GTM API Key</label>
+            <div style="font-size:12px;color:#6b6b80;margin-bottom:10px;">Used to authenticate API calls to Sam from external tools. Leave blank to allow open access.</div>
+            <input id="api-key-input" type="password" placeholder="Enter your API key (e.g. sk-gtm-mysecret)"
+                style="width:100%;background:#22222f;border:1px solid #2e2e3e;border-radius:10px;padding:10px 14px;color:#e8e8f0;font-size:14px;outline:none;font-family:monospace;">
+            <div id="current-key-status" style="font-size:11px;color:#6b6b80;margin-top:6px;"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="closeSettings()" style="background:none;border:1px solid #2e2e3e;border-radius:8px;padding:9px 18px;color:#6b6b80;font-size:13px;cursor:pointer;">Cancel</button>
+            <button onclick="saveApiKey()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;padding:9px 18px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Save Key</button>
+        </div>
+    </div>
+</div>
 
 <div class="page-wrap">
     <div class="sidebar">
@@ -1145,6 +1172,46 @@ OPERATIONS_HTML = """
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     });
+
+    async function openSettings() {
+        document.getElementById('settings-overlay').style.display = 'flex';
+        const res = await fetch('/api/settings/gtm-key');
+        const data = await res.json();
+        const status = document.getElementById('current-key-status');
+        if (data.has_key) {
+            status.textContent = 'Current key: ' + data.masked;
+            status.style.color = '#34d399';
+        } else {
+            status.textContent = 'No key set — API is open access';
+            status.style.color = '#6b6b80';
+        }
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-overlay').style.display = 'none';
+        document.getElementById('api-key-input').value = '';
+    }
+
+    async function saveApiKey() {
+        const key = document.getElementById('api-key-input').value.trim();
+        if (!key) return;
+        const res = await fetch('/api/settings/gtm-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (data.status === 'saved') {
+            closeSettings();
+            const btn = document.querySelector('button[onclick="openSettings()"]');
+            btn.textContent = '✓ Settings';
+            setTimeout(() => btn.textContent = '⚙️ Settings', 2000);
+        }
+    }
+
+    document.getElementById('settings-overlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('settings-overlay')) closeSettings();
+    });
 </script>
 </body>
 </html>
@@ -1185,10 +1252,12 @@ def run_web_search(query: str) -> str:
 
 def check_api_key():
     """Returns True if request has a valid API key (or no key is configured)."""
-    api_key = os.environ.get("GTM_API_KEY", "")
+    api_key = get_setting("gtm_api_key") or os.environ.get("GTM_API_KEY", "")
     if not api_key:
         return True
-    provided = request.headers.get("X-API-Key", "") or request.json.get("api_key", "") if request.is_json else request.headers.get("X-API-Key", "")
+    provided = request.headers.get("X-API-Key", "")
+    if not provided and request.is_json:
+        provided = request.json.get("api_key", "")
     return provided == api_key
 
 
@@ -1447,6 +1516,23 @@ print(response.json()["reply"])</pre>
 @app.route("/api-docs")
 def api_docs():
     return render_template_string(API_DOCS_HTML)
+
+
+@app.route("/api/settings/gtm-key", methods=["GET"])
+def get_gtm_key():
+    key = get_setting("gtm_api_key")
+    masked = ("*" * (len(key) - 4) + key[-4:]) if len(key) > 4 else ("*" * len(key))
+    return jsonify({"has_key": bool(key), "masked": masked if key else ""})
+
+
+@app.route("/api/settings/gtm-key", methods=["POST"])
+def save_gtm_key():
+    data = request.json
+    key = data.get("key", "").strip()
+    if not key:
+        return jsonify({"error": "Key cannot be empty"}), 400
+    set_setting("gtm_api_key", key)
+    return jsonify({"status": "saved"})
 
 
 if __name__ == "__main__":
