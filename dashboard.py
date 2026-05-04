@@ -12,7 +12,7 @@ import time
 import anthropic
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
-from database import get_all_emails, get_stats, init_db, get_setting, set_setting
+from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history
 from integrations import ALL_TOOLS, TOOL_FUNCTIONS
 from config import CLIENTS, CLAUDE_MODEL
 
@@ -1257,6 +1257,21 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
+        <!-- Project Management -->
+        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Project Management</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">📝 Notion Token</span><input class="int-input" data-key="notion_api_key" type="password" placeholder="Notion Integration Secret"></div>
+                <div class="int-row"><span class="int-label">📝 Notion Page ID</span><input class="int-input" data-key="notion_page_id" type="text" placeholder="Parent page or database ID"></div>
+                <div class="int-row"><span class="int-label">💬 Slack Token</span><input class="int-input" data-key="slack_api_key" type="password" placeholder="Slack Bot Token (xoxb-...)"></div>
+                <div class="int-row"><span class="int-label">🔷 Linear API Key</span><input class="int-input" data-key="linear_api_key" type="password" placeholder="Linear API Key"></div>
+                <div class="int-row"><span class="int-label">🔷 Linear Team ID</span><input class="int-input" data-key="linear_team_id" type="text" placeholder="Linear Team ID"></div>
+                <div class="int-row"><span class="int-label">🟦 Jira URL</span><input class="int-input" data-key="jira_url" type="text" placeholder="https://your-company.atlassian.net"></div>
+                <div class="int-row"><span class="int-label">🟦 Jira Email</span><input class="int-input" data-key="jira_email" type="text" placeholder="you@company.com"></div>
+                <div class="int-row"><span class="int-label">🟦 Jira API Token</span><input class="int-input" data-key="jira_api_key" type="password" placeholder="Jira API Token"></div>
+            </div>
+        </div>
+
         <!-- GTM API -->
         <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
             <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Sam Access Key</div>
@@ -1358,7 +1373,14 @@ OPERATIONS_HTML = """
         </div>
 
         <div class="input-area">
+            <div id="attachment-chip" style="display:none;align-items:center;gap:8px;padding:6px 12px;background:#1a1a2e;border:1px solid #2e2e3e;border-radius:8px;margin-bottom:8px;font-size:12px;color:var(--muted);">
+                <span>📎</span>
+                <span id="attachment-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                <button onclick="clearAttachment()" style="background:none;border:none;color:#6b6b80;cursor:pointer;font-size:16px;line-height:1;">×</button>
+            </div>
             <div class="input-row">
+                <input type="file" id="file-input" accept=".txt,.md,.csv,.json,.pdf,.png,.jpg,.jpeg,.gif,.webp,.docx" style="display:none">
+                <button onclick="document.getElementById('file-input').click()" style="background:none;border:1px solid #2e2e3e;border-radius:9px;padding:8px 10px;color:#6b6b80;cursor:pointer;font-size:16px;flex-shrink:0;" title="Attach file">📎</button>
                 <textarea id="msg-input" placeholder="Ask Sam anything about GTM strategy, tools, or execution…" rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">↑</button>
             </div>
@@ -1438,11 +1460,35 @@ OPERATIONS_HTML = """
 
     let currentAgent = 'gtm';
     let history = [];
+    let currentAttachment = null;
+    let sessionId = localStorage.getItem('volvere_session');
+    if (!sessionId) {
+        sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
+        localStorage.setItem('volvere_session', sessionId);
+    }
+
+    async function loadAgentHistory(agentId) {
+        try {
+            const res = await fetch(`/api/agent/${agentId}/history?session_id=${encodeURIComponent(sessionId)}`);
+            const msgs = await res.json();
+            if (!msgs.length) return false;
+            history = msgs;
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            msgs.forEach(m => {
+                const a = AGENTS[agentId];
+                addMessage(m.role === 'user' ? 'user' : 'agent', m.content,
+                           m.role === 'user' ? 'You' : a.title);
+            });
+            return true;
+        } catch(e) { return false; }
+    }
 
     function selectAgent(id) {
         if (id === currentAgent) return;
         currentAgent = id;
         history = [];
+        clearAttachment();
         document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
         event.currentTarget.classList.add('active');
         const a = AGENTS[id];
@@ -1482,11 +1528,13 @@ OPERATIONS_HTML = """
         history.push({ role: 'user', content: text });
 
         const a = AGENTS[currentAgent];
+        const attachment = currentAttachment;
+        clearAttachment();
         try {
             const res = await fetch(a.endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+                body: JSON.stringify({ message: text, history: history.slice(0, -1), session_id: sessionId, attachment })
             });
             const raw = await res.text();
             document.getElementById('typing').classList.remove('show');
@@ -1538,6 +1586,36 @@ OPERATIONS_HTML = """
         return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function clearAttachment() {
+        currentAttachment = null;
+        document.getElementById('attachment-chip').style.display = 'none';
+        document.getElementById('attachment-name').textContent = '';
+        document.getElementById('file-input').value = '';
+    }
+
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const chip = document.getElementById('attachment-chip');
+        document.getElementById('attachment-name').textContent = 'Uploading ' + file.name + '…';
+        chip.style.display = 'flex';
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.error) { alert(data.error); clearAttachment(); return; }
+            currentAttachment = data;
+            document.getElementById('attachment-name').textContent = file.name;
+        } catch(err) {
+            alert('Upload failed: ' + err.message);
+            clearAttachment();
+        }
+    });
+
+    // Load history for initial agent on page load
+    loadAgentHistory(currentAgent);
+
     const input = document.getElementById('msg-input');
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -1554,7 +1632,11 @@ OPERATIONS_HTML = """
         document.querySelectorAll('.int-input').forEach(inp => {
             const k = inp.dataset.key;
             if (data[k]) {
-                inp.placeholder = '••••••••' + data[k];
+                if (inp.type === 'text') {
+                    inp.value = data[k];
+                } else {
+                    inp.placeholder = '••••••••' + data[k];
+                }
                 inp.classList.add('saved');
             }
         });
@@ -1626,7 +1708,6 @@ def build_gtm_system_prompt():
 
 
 def get_active_tools():
-    active = []
     key_map = {
         "apollo_api_key": ["apollo_search_people", "apollo_add_to_sequence"],
         "hubspot_api_key": ["hubspot_create_contact", "hubspot_create_deal", "hubspot_get_contacts"],
@@ -1638,6 +1719,10 @@ def get_active_tools():
         "klaviyo_api_key": ["klaviyo_add_to_list"],
         "mixpanel_api_key": ["mixpanel_track_event"],
         "segment_api_key": ["segment_identify", "segment_track"],
+        "notion_api_key": ["notion_create_page", "notion_search"],
+        "slack_api_key": ["slack_send_message"],
+        "linear_api_key": ["linear_create_issue", "linear_get_issues"],
+        "jira_api_key": ["jira_create_issue", "jira_get_issues"],
     }
     enabled_names = set()
     for setting_key, tool_names in key_map.items():
@@ -1659,8 +1744,8 @@ def _build_system_prompt(base_prompt):
             "Let the user know they can connect tools (HubSpot, Apollo, Mailchimp, etc.) via Settings to enable live execution.")
 
 
-def _run_agent(system_prompt, messages, agent_id):
-    """Shared tool-use loop for all agents."""
+def _run_agent(system_prompt, messages, agent_id, session_id="", user_text=""):
+    """Shared tool-use loop for all agents. Saves memory per session."""
     client = anthropic.Anthropic()
     active_tools = get_active_tools()
     tool_log = []
@@ -1691,7 +1776,29 @@ def _run_agent(system_prompt, messages, agent_id):
             reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
             if tool_log:
                 reply = "**Actions executed:**\n" + "\n".join(f"- {l}" for l in tool_log) + "\n\n" + reply
+            if session_id and user_text:
+                try:
+                    save_agent_message(session_id, agent_id, "user", user_text)
+                    save_agent_message(session_id, agent_id, "assistant", reply.strip())
+                except Exception:
+                    pass
             return jsonify({"reply": reply.strip(), "agent": agent_id, "status": "ok"})
+
+
+def _build_user_message(text, attachment):
+    """Build Claude user message content, including file attachments."""
+    if not attachment:
+        return text
+    if attachment.get("type") == "image":
+        return [
+            {"type": "text", "text": text or f"Please review this file: {attachment.get('name','')}"},
+            {"type": "image", "source": {"type": "base64",
+                                          "media_type": attachment["media_type"],
+                                          "data": attachment["data"]}}
+        ]
+    # text-based file
+    file_block = f"[Attached file: {attachment.get('name','')}]\n\n{attachment.get('content','')}\n\n---\n\n"
+    return file_block + text
 
 
 @app.route("/api/gtm", methods=["POST"])
@@ -1700,8 +1807,12 @@ def gtm_chat():
         if not check_api_key():
             return jsonify({"error": "Invalid or missing API key"}), 401
         data = request.json
-        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
-        return _run_agent(_build_system_prompt(GTM_SYSTEM_PROMPT), messages, "sam-gtm")
+        text = data.get("message", "")
+        attachment = data.get("attachment")
+        session_id = data.get("session_id", "")
+        user_content = _build_user_message(text, attachment)
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(GTM_SYSTEM_PROMPT), messages, "sam-gtm", session_id, text)
     except Exception as e:
         print(f"GTM chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
@@ -1711,8 +1822,10 @@ def gtm_chat():
 def marketing_chat():
     try:
         data = request.json
-        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
-        return _run_agent(_build_system_prompt(MARKETING_SYSTEM_PROMPT), messages, "maya-marketing")
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(MARKETING_SYSTEM_PROMPT), messages, "maya-marketing", data.get("session_id", ""), text)
     except Exception as e:
         print(f"Marketing chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
@@ -1722,8 +1835,10 @@ def marketing_chat():
 def product_chat():
     try:
         data = request.json
-        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
-        return _run_agent(_build_system_prompt(PRODUCT_SYSTEM_PROMPT), messages, "alex-product")
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(PRODUCT_SYSTEM_PROMPT), messages, "alex-product", data.get("session_id", ""), text)
     except Exception as e:
         print(f"Product chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
@@ -1733,8 +1848,10 @@ def product_chat():
 def sales_chat():
     try:
         data = request.json
-        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
-        return _run_agent(_build_system_prompt(SALES_SYSTEM_PROMPT), messages, "jordan-sales")
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(SALES_SYSTEM_PROMPT), messages, "jordan-sales", data.get("session_id", ""), text)
     except Exception as e:
         print(f"Sales chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
@@ -1744,8 +1861,10 @@ def sales_chat():
 def productdev_chat():
     try:
         data = request.json
-        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
-        return _run_agent(_build_system_prompt(PRODUCT_DEV_SYSTEM_PROMPT), messages, "riley-productdev")
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(PRODUCT_DEV_SYSTEM_PROMPT), messages, "riley-productdev", data.get("session_id", ""), text)
     except Exception as e:
         print(f"Product dev chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
@@ -2168,7 +2287,13 @@ INTEGRATION_KEYS = [
     "gtm_api_key", "hubspot_api_key", "salesforce_api_key", "pipedrive_api_key",
     "apollo_api_key", "instantly_api_key", "mailchimp_api_key", "activecampaign_api_key",
     "mixpanel_api_key", "segment_api_key", "intercom_api_key", "klaviyo_api_key",
+    "notion_api_key", "notion_page_id", "slack_api_key",
+    "linear_api_key", "linear_team_id",
+    "jira_url", "jira_email", "jira_api_key",
 ]
+
+# Keys returned in full (not truncated to last 4 chars) — non-secret config values
+PLAIN_SETTING_KEYS = {"notion_page_id", "linear_team_id", "jira_url", "jira_email", "activecampaign_base_url"}
 
 INTEGRATION_NAMES = {
     "hubspot_api_key": "HubSpot", "salesforce_api_key": "Salesforce",
@@ -2176,7 +2301,9 @@ INTEGRATION_NAMES = {
     "instantly_api_key": "Instantly", "mailchimp_api_key": "Mailchimp",
     "activecampaign_api_key": "ActiveCampaign", "mixpanel_api_key": "Mixpanel",
     "segment_api_key": "Segment", "intercom_api_key": "Intercom",
-    "klaviyo_api_key": "Klaviyo",
+    "klaviyo_api_key": "Klaviyo", "notion_api_key": "Notion",
+    "slack_api_key": "Slack", "linear_api_key": "Linear",
+    "jira_api_key": "Jira",
 }
 
 
@@ -2186,7 +2313,7 @@ def get_all_settings():
     for k in INTEGRATION_KEYS:
         val = get_setting(k)
         if val:
-            result[k] = val[-4:]
+            result[k] = val if k in PLAIN_SETTING_KEYS else val[-4:]
     return jsonify(result)
 
 
@@ -2194,9 +2321,54 @@ def get_all_settings():
 def save_all_settings():
     data = request.json
     for k in INTEGRATION_KEYS:
-        if k in data and data[k].strip():
-            set_setting(k, data[k].strip())
+        if k in data and str(data[k]).strip():
+            set_setting(k, str(data[k]).strip())
     return jsonify({"status": "saved"})
+
+
+@app.route("/api/agent/<agent_id>/history")
+def agent_history_route(agent_id):
+    session_id = request.args.get("session_id", "")
+    if not session_id:
+        return jsonify([])
+    return jsonify(get_agent_history(session_id, agent_id))
+
+
+@app.route("/api/upload", methods=["POST"])
+def upload_file():
+    try:
+        f = request.files.get("file")
+        if not f:
+            return jsonify({"error": "No file provided"}), 400
+        name = f.filename or ""
+        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+
+        if ext in ("txt", "md", "csv", "json", "html", "xml", "yaml", "yml"):
+            content = f.read().decode("utf-8", errors="ignore")
+            return jsonify({"type": "text", "content": content[:50000], "name": name})
+
+        elif ext == "pdf":
+            import pypdf, io
+            reader = pypdf.PdfReader(io.BytesIO(f.read()))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            return jsonify({"type": "text", "content": text[:50000], "name": name})
+
+        elif ext == "docx":
+            import docx, io
+            doc = docx.Document(io.BytesIO(f.read()))
+            text = "\n".join(p.text for p in doc.paragraphs)
+            return jsonify({"type": "text", "content": text[:50000], "name": name})
+
+        elif ext in ("png", "jpg", "jpeg", "gif", "webp"):
+            import base64
+            media_type = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
+            data = base64.standard_b64encode(f.read()).decode()
+            return jsonify({"type": "image", "data": data, "media_type": media_type, "name": name})
+
+        else:
+            return jsonify({"error": f"Unsupported file type: .{ext}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

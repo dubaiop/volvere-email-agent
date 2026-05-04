@@ -334,6 +334,160 @@ def segment_track(user_id: str, event: str, properties: dict = None) -> str:
     return f"Tracked Segment event '{event}' for {user_id}."
 
 
+# ── NOTION ───────────────────────────────────────────────────────────────────
+
+def notion_create_page(title: str, content: str, database_id: str = "") -> str:
+    key = get_setting("notion_api_key")
+    if not key:
+        return "Notion API key not configured. Add it in Settings."
+    parent_id = database_id or get_setting("notion_page_id")
+    if not parent_id:
+        return "Notion parent page/database ID not set. Add 'notion_page_id' in Settings."
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json", "Notion-Version": "2022-06-28"}
+    blocks = []
+    for para in content.split("\n\n"):
+        if para.strip():
+            blocks.append({"object": "block", "type": "paragraph",
+                           "paragraph": {"rich_text": [{"type": "text", "text": {"content": para[:2000]}}]}})
+    parent = {"database_id": database_id} if database_id else {"page_id": parent_id}
+    data = {"parent": parent,
+            "properties": {"title": {"title": [{"type": "text", "text": {"content": title}}]}},
+            "children": blocks[:50]}
+    result = _post("https://api.notion.com/v1/pages", data, headers)
+    if result.get("id"):
+        return f"Created Notion page: '{title}' — {result.get('url', '')}"
+    return f"Notion error: {result.get('message', result)}"
+
+
+def notion_search(query: str) -> str:
+    key = get_setting("notion_api_key")
+    if not key:
+        return "Notion API key not configured."
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json", "Notion-Version": "2022-06-28"}
+    result = _post("https://api.notion.com/v1/search", {"query": query, "page_size": 8}, headers)
+    if "message" in result:
+        return f"Notion error: {result['message']}"
+    results = result.get("results", [])
+    if not results:
+        return f"No Notion pages found for '{query}'."
+    lines = [f"Found {len(results)} Notion results:"]
+    for r in results[:5]:
+        props = r.get("properties", {})
+        title = ""
+        for p in props.values():
+            if p.get("type") == "title":
+                title = "".join(t.get("plain_text", "") for t in p.get("title", []))
+                break
+        lines.append(f"- {title or 'Untitled'} | {r.get('url', '')}")
+    return "\n".join(lines)
+
+
+# ── SLACK ─────────────────────────────────────────────────────────────────────
+
+def slack_send_message(channel: str, text: str) -> str:
+    token = get_setting("slack_api_key")
+    if not token:
+        return "Slack bot token not configured. Add it in Settings."
+    result = _post("https://slack.com/api/chat.postMessage",
+                   {"channel": channel, "text": text},
+                   {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    if result.get("ok"):
+        return f"Sent Slack message to {channel}."
+    return f"Slack error: {result.get('error', result)}"
+
+
+# ── LINEAR ────────────────────────────────────────────────────────────────────
+
+def linear_create_issue(title: str, description: str = "", priority: int = 3) -> str:
+    key = get_setting("linear_api_key")
+    if not key:
+        return "Linear API key not configured. Add it in Settings."
+    team_id = get_setting("linear_team_id")
+    if not team_id:
+        return "Linear team ID not configured. Add 'linear_team_id' in Settings."
+    mutation = """mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id title url } } }"""
+    variables = {"input": {"teamId": team_id, "title": title, "priority": priority}}
+    if description:
+        variables["input"]["description"] = description
+    req = urllib.request.Request("https://api.linear.app/graphql",
+                                  data=json.dumps({"query": mutation, "variables": variables}).encode(),
+                                  headers={"Authorization": key, "Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req) as r:
+            result = json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        return f"Linear error: {e.read().decode()}"
+    data = result.get("data", {}).get("issueCreate", {})
+    if data.get("success"):
+        issue = data["issue"]
+        return f"Created Linear issue: '{issue['title']}' — {issue.get('url', '')}"
+    return f"Linear error: {result.get('errors', result)}"
+
+
+def linear_get_issues(limit: int = 10) -> str:
+    key = get_setting("linear_api_key")
+    if not key:
+        return "Linear API key not configured."
+    query = """query($first: Int) { issues(first: $first, orderBy: updatedAt) { nodes { title state { name } url } } }"""
+    req = urllib.request.Request("https://api.linear.app/graphql",
+                                  data=json.dumps({"query": query, "variables": {"first": limit}}).encode(),
+                                  headers={"Authorization": key, "Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req) as r:
+            result = json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        return f"Linear error: {e.read().decode()}"
+    issues = result.get("data", {}).get("issues", {}).get("nodes", [])
+    if not issues:
+        return "No Linear issues found."
+    lines = [f"Linear issues ({len(issues)}):"]
+    for i in issues:
+        lines.append(f"- [{i.get('state',{}).get('name','')}] {i['title']}")
+    return "\n".join(lines)
+
+
+# ── JIRA ──────────────────────────────────────────────────────────────────────
+
+def jira_create_issue(project_key: str, summary: str, description: str = "", issue_type: str = "Task") -> str:
+    import base64
+    token = get_setting("jira_api_key")
+    email = get_setting("jira_email")
+    base_url = get_setting("jira_url", "").rstrip("/")
+    if not all([token, email, base_url]):
+        return "Jira not fully configured. Add Jira URL, email, and API token in Settings."
+    auth = base64.b64encode(f"{email}:{token}".encode()).decode()
+    fields = {"project": {"key": project_key}, "summary": summary, "issuetype": {"name": issue_type}}
+    if description:
+        fields["description"] = {"type": "doc", "version": 1,
+                                  "content": [{"type": "paragraph", "content": [{"type": "text", "text": description}]}]}
+    result = _post(f"{base_url}/rest/api/3/issue", {"fields": fields},
+                   {"Authorization": f"Basic {auth}", "Content-Type": "application/json", "Accept": "application/json"})
+    if result.get("id"):
+        return f"Created Jira issue: {result.get('key', result['id'])} — '{summary}' in {project_key}"
+    return f"Jira error: {result.get('errors', result.get('errorMessages', result))}"
+
+
+def jira_get_issues(project_key: str, max_results: int = 10) -> str:
+    import base64
+    token = get_setting("jira_api_key")
+    email = get_setting("jira_email")
+    base_url = get_setting("jira_url", "").rstrip("/")
+    if not all([token, email, base_url]):
+        return "Jira not fully configured."
+    auth = base64.b64encode(f"{email}:{token}".encode()).decode()
+    jql = f"project%3D{project_key}+ORDER+BY+updated+DESC"
+    result = _get(f"{base_url}/rest/api/3/search?jql={jql}&maxResults={max_results}&fields=summary,status",
+                  {"Authorization": f"Basic {auth}", "Accept": "application/json"})
+    issues = result.get("issues", [])
+    if not issues:
+        return f"No issues in Jira project {project_key}."
+    lines = [f"Jira {project_key} issues ({len(issues)}):"]
+    for i in issues:
+        f = i.get("fields", {})
+        lines.append(f"- [{f.get('status',{}).get('name','')}] {i['key']}: {f.get('summary','')}")
+    return "\n".join(lines)
+
+
 # ── TOOL REGISTRY ────────────────────────────────────────────────────────────
 
 TOOL_FUNCTIONS = {
@@ -355,6 +509,13 @@ TOOL_FUNCTIONS = {
     "mixpanel_track_event": mixpanel_track_event,
     "segment_identify": segment_identify,
     "segment_track": segment_track,
+    "notion_create_page": notion_create_page,
+    "notion_search": notion_search,
+    "slack_send_message": slack_send_message,
+    "linear_create_issue": linear_create_issue,
+    "linear_get_issues": linear_get_issues,
+    "jira_create_issue": jira_create_issue,
+    "jira_get_issues": jira_get_issues,
 }
 
 ALL_TOOLS = [
@@ -376,4 +537,11 @@ ALL_TOOLS = [
     {"name": "mixpanel_track_event", "description": "Track an event in Mixpanel.", "input_schema": {"type": "object", "properties": {"event": {"type": "string"}, "distinct_id": {"type": "string"}, "properties": {"type": "object"}}, "required": ["event", "distinct_id"]}},
     {"name": "segment_identify", "description": "Identify a user in Segment with traits.", "input_schema": {"type": "object", "properties": {"user_id": {"type": "string"}, "traits": {"type": "object"}}, "required": ["user_id"]}},
     {"name": "segment_track", "description": "Track an event in Segment.", "input_schema": {"type": "object", "properties": {"user_id": {"type": "string"}, "event": {"type": "string"}, "properties": {"type": "object"}}, "required": ["user_id", "event"]}},
+    {"name": "notion_create_page", "description": "Create a new page in Notion with a title and content.", "input_schema": {"type": "object", "properties": {"title": {"type": "string"}, "content": {"type": "string"}, "database_id": {"type": "string", "description": "Optional Notion database ID"}}, "required": ["title", "content"]}},
+    {"name": "notion_search", "description": "Search for pages in Notion by keyword.", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+    {"name": "slack_send_message", "description": "Send a message to a Slack channel.", "input_schema": {"type": "object", "properties": {"channel": {"type": "string", "description": "Channel name e.g. #general"}, "text": {"type": "string"}}, "required": ["channel", "text"]}},
+    {"name": "linear_create_issue", "description": "Create an issue in Linear.", "input_schema": {"type": "object", "properties": {"title": {"type": "string"}, "description": {"type": "string"}, "priority": {"type": "integer", "description": "0=none 1=urgent 2=high 3=medium 4=low"}}, "required": ["title"]}},
+    {"name": "linear_get_issues", "description": "List recent issues from Linear.", "input_schema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 10}}}},
+    {"name": "jira_create_issue", "description": "Create an issue in Jira.", "input_schema": {"type": "object", "properties": {"project_key": {"type": "string"}, "summary": {"type": "string"}, "description": {"type": "string"}, "issue_type": {"type": "string", "default": "Task"}}, "required": ["project_key", "summary"]}},
+    {"name": "jira_get_issues", "description": "List recent issues from a Jira project.", "input_schema": {"type": "object", "properties": {"project_key": {"type": "string"}, "max_results": {"type": "integer", "default": 10}}, "required": ["project_key"]}},
 ]

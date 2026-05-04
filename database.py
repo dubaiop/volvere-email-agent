@@ -53,6 +53,16 @@ def init_db():
                         created_at TEXT NOT NULL
                     )
                 """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS agent_memory (
+                        id SERIAL PRIMARY KEY,
+                        session_id TEXT NOT NULL,
+                        agent_id TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        created_at TEXT NOT NULL
+                    )
+                """)
             conn.commit()
     else:
         with _conn() as conn:
@@ -73,6 +83,13 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS conversation_memory (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     client_id TEXT, sender TEXT, role TEXT,
+                    content TEXT, created_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT, agent_id TEXT, role TEXT,
                     content TEXT, created_at TEXT
                 )
             """)
@@ -187,6 +204,46 @@ def get_stats() -> dict:
         "total": total,
         "by_client": [{"name": r[0], "count": r[1]} for r in clients],
     }
+
+
+def save_agent_message(session_id: str, agent_id: str, role: str, content: str):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO agent_memory (session_id, agent_id, role, content, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (session_id, agent_id, role, content, now))
+            conn.commit()
+    else:
+        with _conn() as conn:
+            conn.execute("""
+                INSERT INTO agent_memory (session_id, agent_id, role, content, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (session_id, agent_id, role, content, now))
+            conn.commit()
+
+
+def get_agent_history(session_id: str, agent_id: str, limit: int = 30) -> list[dict]:
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT role, content FROM agent_memory
+                    WHERE session_id = %s AND agent_id = %s
+                    ORDER BY created_at ASC LIMIT %s
+                """, (session_id, agent_id, limit))
+                rows = cur.fetchall()
+    else:
+        with _conn() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("""
+                SELECT role, content FROM agent_memory
+                WHERE session_id = ? AND agent_id = ?
+                ORDER BY created_at ASC LIMIT ?
+            """, (session_id, agent_id, limit)).fetchall()
+    return [{"role": r["role"], "content": r["content"]} for r in rows]
 
 
 def get_setting(key: str, default: str = "") -> str:

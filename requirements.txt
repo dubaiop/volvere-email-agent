@@ -5,3 +5,5 @@ flask
 gunicorn
 psycopg2-binary
 duckduckgo-search
+pypdf
+python-docx
