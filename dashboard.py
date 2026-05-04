@@ -913,12 +913,13 @@ OPERATIONS_HTML = """
         .msg.user .msg-bubble { background: var(--surface2); }
         .msg-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
 
-        .typing { display: none; align-items: center; gap: 6px; padding: 0 32px; }
+        .typing { display: none; align-items: center; gap: 6px; padding: 8px 32px; flex-shrink: 0; flex-direction: row; white-space: nowrap; }
         .typing.show { display: flex; }
-        .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2);
-                       animation: bounce 1.2s infinite; }
-        .typing span:nth-child(2) { animation-delay: 0.2s; }
-        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dots { display: flex; align-items: center; gap: 4px; }
+        .typing span.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2);
+                       animation: bounce 1.2s infinite; flex-shrink: 0; }
+        .typing span.dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing span.dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
 
         .input-area { padding: 16px 32px 24px; border-top: 1px solid var(--border);
@@ -1029,7 +1030,9 @@ OPERATIONS_HTML = """
         </div>
 
         <div class="typing" id="typing">
-            <span></span><span></span><span></span>
+            <div class="typing-dots">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
             <span style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span>
         </div>
 
