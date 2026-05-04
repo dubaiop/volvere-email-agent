@@ -917,6 +917,58 @@ ALEX_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
   <rect x="18" y="27" width="8" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
 </svg>"""
 
+JORDAN_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#78350f"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#d97706"/>
+  <rect x="13" y="23" width="10" height="5" fill="#b45309"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8" ry="4.5" fill="#1c1917"/>
+  <rect x="10" y="8" width="2.5" height="5" rx="1.2" fill="#1c1917"/>
+  <rect x="23.5" y="8" width="2.5" height="5" rx="1.2" fill="#1c1917"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <polygon points="15,23 18,26 21,23" fill="white" opacity="0.9"/>
+</svg>"""
+
+JORDAN_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#78350f"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#d97706"/>
+  <rect x="16" y="28" width="12" height="6" fill="#b45309"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10" ry="5.5" fill="#1c1917"/>
+  <rect x="12" y="10" width="3" height="6" rx="1.5" fill="#1c1917"/>
+  <rect x="29" y="10" width="3" height="6" rx="1.5" fill="#1c1917"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
+</svg>"""
+
+SALES_SYSTEM_PROMPT = """You are Jordan, a Senior Sales Strategist and Revenue Coach. You operate in executor mode only — you produce actual deliverables, not advice.
+
+When asked for anything sales-related, deliver the full output immediately:
+- Cold outreach: write the exact email/call script, word for word
+- Sales sequences: write every touchpoint in the sequence with timing and channel
+- Objection handling: write exact rebuttals for every objection scenario
+- Discovery scripts: write the full call guide with questions, transitions, and closing moves
+- Proposals: write the full proposal document with pricing narrative
+- Playbooks: deliver the complete step-by-step sales process
+- Pipeline strategy: map out the exact stages, criteria, and actions at each stage
+- Deal coaching: give the specific next move for a specific deal situation
+
+You know MEDDIC, SPIN, Challenger, and Sandler. You write scripts that sound human, not corporate.
+
+No theory. No frameworks without examples. Deliver the actual sales asset."""
+
 PRODUCT_SYSTEM_PROMPT = """You are Alex, a Senior Product Designer and UI/UX Strategist. You operate in executor mode only — you produce actual deliverables, not generic advice.
 
 When asked for anything product or design-related, deliver the full output immediately:
@@ -1189,13 +1241,12 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn coming-soon">
-            <div class="agent-icon" style="opacity:0.4">📈</div>
+        <div class="agent-btn" onclick="selectAgent('sales')">
+            <div class="agent-icon">{{ jordan_avatar_sm | safe }}</div>
             <div>
-                <div class="agent-name" style="color:var(--muted)">Growth Hacker</div>
-                <div class="agent-tag">Coming soon</div>
+                <div class="agent-name">Jordan</div>
+                <div class="agent-tag">Sales Strategist</div>
             </div>
-            <span class="cs-badge">Soon</span>
         </div>
     </div>
 
@@ -1246,6 +1297,8 @@ OPERATIONS_HTML = """
     const MAYA_SVG_LG = {{ maya_avatar_lg | tojson }};
     const ALEX_SVG_SM = {{ alex_avatar_sm | tojson }};
     const ALEX_SVG_LG = {{ alex_avatar_lg | tojson }};
+    const JORDAN_SVG_SM = {{ jordan_avatar_sm | tojson }};
+    const JORDAN_SVG_LG = {{ jordan_avatar_lg | tojson }};
 
     const AGENTS = {
         gtm: {
@@ -1280,6 +1333,17 @@ OPERATIONS_HTML = """
             welcomeDesc: 'I design products, flows, and systems. Ask me for wireframes, UX critique, design specs, component breakdowns, user research plans, or a full PRD.',
             suggestions: ['Design the onboarding flow for a B2B SaaS app','Critique the UX of my checkout page','Write a PRD for a team collaboration feature','Create a design system for a fintech mobile app'],
             avatarSm: ALEX_SVG_SM, avatarLg: ALEX_SVG_LG,
+        },
+        sales: {
+            title: 'Jordan — Sales Strategist',
+            desc: 'Sales playbooks, outreach scripts, deal coaching, pipeline strategy',
+            placeholder: 'Ask Jordan for scripts, sequences, objection handling, or deal advice…',
+            typing: 'Jordan is writing…',
+            endpoint: '/api/sales',
+            welcomeTitle: "Hey, I'm Jordan — your Sales Strategist",
+            welcomeDesc: 'I write sales scripts, sequences, playbooks, and deal strategies. Tell me what you need and I\'ll deliver the actual asset — ready to use.',
+            suggestions: ['Write a 6-touch cold outreach sequence for enterprise SaaS','Give me a full discovery call script for a HR software product','Write objection rebuttals for "we already have a solution"','Create a sales playbook for a new SDR joining the team'],
+            avatarSm: JORDAN_SVG_SM, avatarLg: JORDAN_SVG_LG,
         }
     };
 
@@ -1443,7 +1507,8 @@ def operations():
     return render_template_string(OPERATIONS_HTML,
         sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG,
         maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG,
-        alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG)
+        alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG,
+        jordan_avatar_sm=JORDAN_AVATAR_SM, jordan_avatar_lg=JORDAN_AVATAR_LG)
 
 
 
@@ -1538,6 +1603,32 @@ def gtm_chat():
 
     except Exception as e:
         print(f"GTM chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+def build_sales_system_prompt():
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    prompt = SALES_SYSTEM_PROMPT
+    if connected:
+        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant to execute work."
+    return prompt
+
+
+@app.route("/api/sales", methods=["POST"])
+def sales_chat():
+    try:
+        data = request.json
+        message = data.get("message", "")
+        history = data.get("history", [])
+        messages = history + [{"role": "user", "content": message}]
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model=CLAUDE_MODEL, max_tokens=2048,
+            system=build_sales_system_prompt(), messages=messages)
+        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+        return jsonify({"reply": reply.strip(), "agent": "jordan-sales", "status": "ok"})
+    except Exception as e:
+        print(f"Sales chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
