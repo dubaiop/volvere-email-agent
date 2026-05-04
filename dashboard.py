@@ -979,7 +979,6 @@ OPERATIONS_HTML = """
     </div>
     <div class="nav-links">
         <button class="nav-btn" onclick="openSettings()" style="cursor:pointer;">⚙️ Settings</button>
-        <a href="/api-docs" class="nav-btn">🔑 API Docs</a>
         <a href="/" class="nav-btn">📧 Email Dashboard</a>
         <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
     </div>
