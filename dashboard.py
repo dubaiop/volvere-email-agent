@@ -881,6 +881,58 @@ Style: Direct, creative, conversion-focused. You understand B2B and B2C marketin
 
 You never say "you should consider..." — you just build it. No preamble. Deliver the work."""
 
+ALEX_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#1e3a5f"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#2563eb"/>
+  <rect x="13" y="23" width="10" height="5" fill="#1d4ed8"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8" ry="4.5" fill="#374151"/>
+  <rect x="10" y="8" width="2.5" height="5" rx="1.2" fill="#374151"/>
+  <rect x="23.5" y="8" width="2.5" height="5" rx="1.2" fill="#374151"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <rect x="15" y="22.5" width="6" height="1.2" rx="0.6" fill="white" opacity="0.8"/>
+</svg>"""
+
+ALEX_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#1e3a5f"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#2563eb"/>
+  <rect x="16" y="28" width="12" height="6" fill="#1d4ed8"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10" ry="5.5" fill="#374151"/>
+  <rect x="12" y="10" width="3" height="6" rx="1.5" fill="#374151"/>
+  <rect x="29" y="10" width="3" height="6" rx="1.5" fill="#374151"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <rect x="18" y="27" width="8" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
+</svg>"""
+
+PRODUCT_SYSTEM_PROMPT = """You are Alex, a Senior Product Designer and UI/UX Strategist. You operate in executor mode only — you produce actual deliverables, not generic advice.
+
+When asked for anything product or design-related, deliver the full output immediately:
+- User flows: map every step with screens, decisions, and edge cases
+- Wireframes: describe layouts in precise detail (sections, components, spacing, hierarchy)
+- Design specs: write exact component specs, color tokens, typography, spacing values
+- UX critique: audit existing designs with specific, actionable findings and fixes
+- Design systems: define components, variants, states, and usage rules
+- User research: write screener questions, interview scripts, and usability test plans
+- Product specs (PRDs): write full feature specs with acceptance criteria
+- Onboarding flows: design the full step-by-step experience with copy
+
+You think in systems. You balance business goals with user needs. You reference real design patterns (Material, HIG, Fluent) when relevant.
+
+No filler. No "it depends." Deliver the actual design work."""
+
 
 OPERATIONS_HTML = """
 <!DOCTYPE html>
@@ -1129,13 +1181,12 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn coming-soon">
-            <div class="agent-icon" style="opacity:0.4">🎯</div>
+        <div class="agent-btn" onclick="selectAgent('product')">
+            <div class="agent-icon">{{ alex_avatar_sm | safe }}</div>
             <div>
-                <div class="agent-name" style="color:var(--muted)">Sales Ops</div>
-                <div class="agent-tag">Coming soon</div>
+                <div class="agent-name">Alex</div>
+                <div class="agent-tag">Product Designer</div>
             </div>
-            <span class="cs-badge">Soon</span>
         </div>
 
         <div class="agent-btn coming-soon">
@@ -1193,6 +1244,8 @@ OPERATIONS_HTML = """
     const SAM_SVG_LG = {{ sam_avatar_lg | tojson }};
     const MAYA_SVG_SM = {{ maya_avatar_sm | tojson }};
     const MAYA_SVG_LG = {{ maya_avatar_lg | tojson }};
+    const ALEX_SVG_SM = {{ alex_avatar_sm | tojson }};
+    const ALEX_SVG_LG = {{ alex_avatar_lg | tojson }};
 
     const AGENTS = {
         gtm: {
@@ -1216,6 +1269,17 @@ OPERATIONS_HTML = """
             welcomeDesc: 'I create campaigns, content, and marketing systems. Tell me what you need — ad copy, email sequences, content calendars, brand messaging, or a full launch plan.',
             suggestions: ['Write a full email nurture sequence for SaaS trial users','Create a 30-day content calendar for a B2B fintech company','Write Facebook ad copy for a productivity app launch','Build a go-to-market launch plan for a new product'],
             avatarSm: MAYA_SVG_SM, avatarLg: MAYA_SVG_LG,
+        },
+        product: {
+            title: 'Alex — Product Designer',
+            desc: 'UI/UX design, wireframes, design systems, product specs',
+            placeholder: 'Ask Alex to design flows, critique UI, or write product specs…',
+            typing: 'Alex is designing…',
+            endpoint: '/api/product',
+            welcomeTitle: "Hey, I'm Alex — your Product Designer",
+            welcomeDesc: 'I design products, flows, and systems. Ask me for wireframes, UX critique, design specs, component breakdowns, user research plans, or a full PRD.',
+            suggestions: ['Design the onboarding flow for a B2B SaaS app','Critique the UX of my checkout page','Write a PRD for a team collaboration feature','Create a design system for a fintech mobile app'],
+            avatarSm: ALEX_SVG_SM, avatarLg: ALEX_SVG_LG,
         }
     };
 
@@ -1378,7 +1442,8 @@ OPERATIONS_HTML = """
 def operations():
     return render_template_string(OPERATIONS_HTML,
         sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG,
-        maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG)
+        maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG,
+        alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG)
 
 
 
@@ -1473,6 +1538,32 @@ def gtm_chat():
 
     except Exception as e:
         print(f"GTM chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+def build_product_system_prompt():
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    prompt = PRODUCT_SYSTEM_PROMPT
+    if connected:
+        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant."
+    return prompt
+
+
+@app.route("/api/product", methods=["POST"])
+def product_chat():
+    try:
+        data = request.json
+        message = data.get("message", "")
+        history = data.get("history", [])
+        messages = history + [{"role": "user", "content": message}]
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model=CLAUDE_MODEL, max_tokens=2048,
+            system=build_product_system_prompt(), messages=messages)
+        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+        return jsonify({"reply": reply.strip(), "agent": "alex-product", "status": "ok"})
+    except Exception as e:
+        print(f"Product chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
