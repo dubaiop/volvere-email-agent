@@ -830,6 +830,57 @@ SAM_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
   <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
 </svg>"""
 
+MAYA_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#4c1d95"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#7c3aed"/>
+  <rect x="13" y="23" width="10" height="5" fill="#5b21b6"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8.5" ry="5" fill="#92400e"/>
+  <rect x="9" y="8" width="3" height="9" rx="1.5" fill="#92400e"/>
+  <rect x="24" y="8" width="3" height="9" rx="1.5" fill="#92400e"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <circle cx="18" cy="22.5" r="1" fill="#fbbf24" opacity="0.85"/>
+</svg>"""
+
+MAYA_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#4c1d95"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#7c3aed"/>
+  <rect x="16" y="28" width="12" height="6" fill="#5b21b6"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10.5" ry="6" fill="#92400e"/>
+  <rect x="11" y="10" width="4" height="11" rx="2" fill="#92400e"/>
+  <rect x="29" y="10" width="4" height="11" rx="2" fill="#92400e"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="22" cy="27.5" r="1.3" fill="#fbbf24" opacity="0.85"/>
+</svg>"""
+
+MARKETING_SYSTEM_PROMPT = """You are Maya, a Marketing Strategist and Creative Director. You operate in executor mode only — you produce actual deliverables, never generic advice.
+
+When asked for anything marketing-related, deliver the full output immediately:
+- Email campaigns: write every email in the sequence with subject lines and full body
+- Ad copy: write multiple ready-to-use variations
+- Content calendars: fill in actual topics, formats, and schedules
+- Brand messaging: deliver the actual framework, taglines, and copy
+- Social media: write the actual posts
+- Landing pages: write the actual copy and structure
+- Launch plans: build the actual timeline, channels, and assets
+
+Style: Direct, creative, conversion-focused. You understand B2B and B2C marketing, growth loops, and brand strategy.
+
+You never say "you should consider..." — you just build it. No preamble. Deliver the work."""
+
 
 OPERATIONS_HTML = """
 <!DOCTYPE html>
@@ -1070,13 +1121,12 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn coming-soon">
-            <div class="agent-icon" style="opacity:0.4">📊</div>
+        <div class="agent-btn" onclick="selectAgent('marketing')">
+            <div class="agent-icon">{{ maya_avatar_sm | safe }}</div>
             <div>
-                <div class="agent-name" style="color:var(--muted)">Revenue Ops</div>
-                <div class="agent-tag">Coming soon</div>
+                <div class="agent-name">Maya</div>
+                <div class="agent-tag">Marketing Strategist</div>
             </div>
-            <span class="cs-badge">Soon</span>
         </div>
 
         <div class="agent-btn coming-soon">
@@ -1100,20 +1150,20 @@ OPERATIONS_HTML = """
 
     <div class="chat-wrap">
         <div class="agent-header">
-            <div class="agent-header-icon" style="background:none;padding:0;overflow:hidden;">{{ sam_avatar_lg | safe }}</div>
+            <div id="agent-header-icon" class="agent-header-icon" style="background:none;padding:0;overflow:hidden;">{{ sam_avatar_lg | safe }}</div>
             <div class="agent-header-info">
-                <h2>Sam — GTM Engineer</h2>
-                <p>Go-to-Market strategy, tech stack, sales ops, growth execution</p>
+                <h2 id="agent-header-name">Sam — GTM Engineer</h2>
+                <p id="agent-header-desc">Go-to-Market strategy, tech stack, sales ops, growth execution</p>
             </div>
             <div class="online-dot"></div>
         </div>
 
         <div class="messages" id="messages">
             <div class="welcome" id="welcome">
-                <div class="welcome-icon" style="display:flex;justify-content:center;"><div style="width:72px;height:72px;border-radius:18px;overflow:hidden;">{{ sam_avatar_lg | safe }}</div></div>
-                <h3>Hey, I'm Sam — your GTM Engineer</h3>
-                <p>I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
-                <div class="suggestions">
+                <div class="welcome-icon" style="display:flex;justify-content:center;"><div id="welcome-icon" style="width:72px;height:72px;border-radius:18px;overflow:hidden;">{{ sam_avatar_lg | safe }}</div></div>
+                <h3 id="welcome-title">Hey, I'm Sam — your GTM Engineer</h3>
+                <p id="welcome-desc">I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
+                <div class="suggestions" id="suggestions">
                     <div class="suggestion" onclick="sendSuggestion(this)">Write me a 5-email cold outreach sequence for SaaS founders</div>
                     <div class="suggestion" onclick="sendSuggestion(this)">Build me a full ICP for a B2B HR tech startup</div>
                     <div class="suggestion" onclick="sendSuggestion(this)">Research HubSpot's pricing and positioning vs Salesforce</div>
@@ -1126,7 +1176,7 @@ OPERATIONS_HTML = """
             <div class="typing-dots">
                 <span class="dot"></span><span class="dot"></span><span class="dot"></span>
             </div>
-            <span style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span>
+            <span id="typing-text" style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span>
         </div>
 
         <div class="input-area">
@@ -1139,12 +1189,60 @@ OPERATIONS_HTML = """
 </div>
 
 <script>
-    const SAM_SVG = {{ sam_avatar_sm | tojson }};
+    const SAM_SVG_SM = {{ sam_avatar_sm | tojson }};
+    const SAM_SVG_LG = {{ sam_avatar_lg | tojson }};
+    const MAYA_SVG_SM = {{ maya_avatar_sm | tojson }};
+    const MAYA_SVG_LG = {{ maya_avatar_lg | tojson }};
+
+    const AGENTS = {
+        gtm: {
+            title: 'Sam — GTM Engineer',
+            desc: 'Go-to-Market strategy, tech stack, sales ops, growth execution',
+            placeholder: 'Ask Sam anything about GTM strategy, tools, or execution…',
+            typing: 'Sam is working on it…',
+            endpoint: '/api/gtm',
+            welcomeTitle: "Hey, I'm Sam — your GTM Engineer",
+            welcomeDesc: 'I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.',
+            suggestions: ['Write me a 5-email cold outreach sequence for SaaS founders','Build me a full ICP for a B2B HR tech startup','Research HubSpot\'s pricing and positioning vs Salesforce','Write a LinkedIn outreach message for a VP of Sales'],
+            avatarSm: SAM_SVG_SM, avatarLg: SAM_SVG_LG,
+        },
+        marketing: {
+            title: 'Maya — Marketing Strategist',
+            desc: 'Brand campaigns, content strategy, email marketing, growth',
+            placeholder: 'Ask Maya to create campaigns, copy, or marketing strategy…',
+            typing: 'Maya is creating…',
+            endpoint: '/api/marketing',
+            welcomeTitle: "Hi, I'm Maya — your Marketing Strategist",
+            welcomeDesc: 'I create campaigns, content, and marketing systems. Tell me what you need — ad copy, email sequences, content calendars, brand messaging, or a full launch plan.',
+            suggestions: ['Write a full email nurture sequence for SaaS trial users','Create a 30-day content calendar for a B2B fintech company','Write Facebook ad copy for a productivity app launch','Build a go-to-market launch plan for a new product'],
+            avatarSm: MAYA_SVG_SM, avatarLg: MAYA_SVG_LG,
+        }
+    };
+
+    let currentAgent = 'gtm';
     let history = [];
 
     function selectAgent(id) {
+        if (id === currentAgent) return;
+        currentAgent = id;
+        history = [];
         document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
         event.currentTarget.classList.add('active');
+        const a = AGENTS[id];
+        document.getElementById('agent-header-icon').innerHTML = a.avatarLg;
+        document.getElementById('agent-header-name').textContent = a.title;
+        document.getElementById('agent-header-desc').textContent = a.desc;
+        document.getElementById('typing-text').textContent = a.typing;
+        document.getElementById('msg-input').placeholder = a.placeholder;
+        document.getElementById('messages').innerHTML = `
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon" style="display:flex;justify-content:center;"><div style="width:72px;height:72px;border-radius:18px;overflow:hidden;">${a.avatarLg}</div></div>
+                <h3>${a.welcomeTitle}</h3>
+                <p>${a.welcomeDesc}</p>
+                <div class="suggestions">
+                    ${a.suggestions.map(s => `<div class="suggestion" onclick="sendSuggestion(this)">${s}</div>`).join('')}
+                </div>
+            </div>`;
     }
 
     function sendSuggestion(el) {
@@ -1166,8 +1264,9 @@ OPERATIONS_HTML = """
 
         history.push({ role: 'user', content: text });
 
+        const a = AGENTS[currentAgent];
         try {
-            const res = await fetch('/api/gtm', {
+            const res = await fetch(a.endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text, history: history.slice(0, -1) })
@@ -1176,18 +1275,18 @@ OPERATIONS_HTML = """
             document.getElementById('typing').classList.remove('show');
             let data;
             try { data = JSON.parse(raw); } catch(_) {
-                addMessage('agent', '⚠️ Server error (HTTP ' + res.status + ')', 'Sam');
+                addMessage('agent', '⚠️ Server error (HTTP ' + res.status + ')', a.title);
                 return;
             }
             if (data.error) {
-                addMessage('agent', '⚠️ ' + data.error, 'Sam');
+                addMessage('agent', '⚠️ ' + data.error, a.title);
             } else {
-                addMessage('agent', data.reply || '(no response)', 'Sam — GTM Engineer');
+                addMessage('agent', data.reply || '(no response)', a.title);
                 history.push({ role: 'assistant', content: data.reply });
             }
         } catch(e) {
             document.getElementById('typing').classList.remove('show');
-            addMessage('agent', '⚠️ ' + e.message, 'Sam');
+            addMessage('agent', '⚠️ ' + e.message, a.title);
         }
     }
 
@@ -1196,11 +1295,12 @@ OPERATIONS_HTML = """
         const div = document.createElement('div');
         div.className = `msg ${type}`;
         const bubbleContent = type === 'agent' ? marked.parse(text || '') : escapeHtml(text || '');
+        const avatarSvg = AGENTS[currentAgent].avatarSm;
         const copyBtn = type === 'agent'
             ? `<button onclick="copyText(this, ${JSON.stringify(text)})" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
             : '';
         div.innerHTML = `
-            <div class="msg-avatar" style="background:none;padding:0;overflow:hidden;border-radius:10px;">${type === 'agent' ? SAM_SVG : '👤'}</div>
+            <div class="msg-avatar" style="background:none;padding:0;overflow:hidden;border-radius:10px;">${type === 'agent' ? avatarSvg : '👤'}</div>
             <div>
                 <div class="msg-name">${name}</div>
                 <div class="msg-bubble">${bubbleContent}</div>
@@ -1276,7 +1376,9 @@ OPERATIONS_HTML = """
 
 @app.route("/operations")
 def operations():
-    return render_template_string(OPERATIONS_HTML, sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG)
+    return render_template_string(OPERATIONS_HTML,
+        sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG,
+        maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG)
 
 
 
@@ -1371,6 +1473,50 @@ def gtm_chat():
 
     except Exception as e:
         print(f"GTM chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+def build_marketing_system_prompt():
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    prompt = MARKETING_SYSTEM_PROMPT
+    if connected:
+        prompt += f"\n\nYou have LIVE API access to: {', '.join(connected)}. Use the tools to actually execute — don't just describe."
+    else:
+        prompt += "\n\nNo tools connected yet. Produce full, ready-to-use deliverables and let the user know they can connect tools via Settings."
+    return prompt
+
+
+@app.route("/api/marketing", methods=["POST"])
+def marketing_chat():
+    try:
+        data = request.json
+        message = data.get("message", "")
+        history = data.get("history", [])
+        messages = history + [{"role": "user", "content": message}]
+        client = anthropic.Anthropic()
+        active_tools = get_active_tools()
+
+        while True:
+            kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
+                         system=build_marketing_system_prompt(), messages=messages)
+            if active_tools:
+                kwargs["tools"] = active_tools
+            resp = client.messages.create(**kwargs)
+            if resp.stop_reason == "tool_use":
+                tool_results = []
+                for block in resp.content:
+                    if block.type == "tool_use":
+                        fn = TOOL_FUNCTIONS.get(block.name)
+                        result = fn(**block.input) if fn else f"Unknown tool: {block.name}"
+                        tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+                messages.append({"role": "assistant", "content": resp.content})
+                messages.append({"role": "user", "content": tool_results})
+            else:
+                reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+                return jsonify({"reply": reply.strip(), "agent": "maya-marketing", "status": "ok"})
+
+    except Exception as e:
+        print(f"Marketing chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
