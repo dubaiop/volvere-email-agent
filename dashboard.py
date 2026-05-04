@@ -1380,57 +1380,79 @@ API_DOCS_HTML = """
         body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
                background:var(--bg); color:var(--text); min-height:100vh; }
         header { padding:20px 40px; display:flex; align-items:center; justify-content:space-between;
-                 border-bottom:1px solid var(--border); background:var(--surface); }
+                 border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:10; }
         .logo { display:flex; align-items:center; gap:12px; }
         .logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2));
                      border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
         .logo h1 { font-size:18px; font-weight:600; }
         .logo span { font-size:12px; color:var(--muted); }
-        .nav-links { display:flex; gap:12px; }
-        .nav-btn { display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;
+        .nav-links { display:flex; gap:10px; }
+        .nav-btn { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px;
                    border:1px solid var(--border); background:var(--surface2); color:var(--text);
                    font-size:13px; font-weight:500; text-decoration:none; transition:border-color 0.2s; }
         .nav-btn:hover { border-color:var(--accent2); }
-        .content { max-width:860px; margin:0 auto; padding:48px 40px; }
-        h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
-        .subtitle { color:var(--muted); font-size:14px; margin-bottom:40px; }
-        .section { margin-bottom:40px; }
-        .section-title { font-size:16px; font-weight:600; margin-bottom:16px;
-                         padding-bottom:8px; border-bottom:1px solid var(--border); }
-        .endpoint { background:var(--surface); border:1px solid var(--border); border-radius:12px;
-                    overflow:hidden; margin-bottom:20px; }
-        .endpoint-header { padding:14px 20px; display:flex; align-items:center; gap:12px;
-                           border-bottom:1px solid var(--border); }
-        .method { background:#059669; color:white; font-size:11px; font-weight:700;
-                  padding:3px 8px; border-radius:5px; letter-spacing:0.5px; }
-        .path { font-family:monospace; font-size:14px; }
-        .endpoint-body { padding:20px; }
-        .param-table { width:100%; border-collapse:collapse; font-size:13px; }
-        .param-table th { text-align:left; color:var(--muted); font-weight:500; padding:6px 0;
-                          border-bottom:1px solid var(--border); }
-        .param-table td { padding:8px 0; border-bottom:1px solid var(--border); vertical-align:top; }
-        .param-table td:first-child { font-family:monospace; color:var(--accent2); width:140px; }
-        .param-table td:nth-child(2) { color:var(--muted); width:80px; }
-        .required { color:#f87171; font-size:10px; font-weight:600; }
-        .optional { color:var(--muted); font-size:10px; }
-        pre { background:var(--surface2); border:1px solid var(--border); border-radius:10px;
-              padding:18px; overflow-x:auto; font-family:monospace; font-size:13px; line-height:1.6; margin-top:16px; }
-        .copy-btn { float:right; background:none; border:1px solid var(--border); border-radius:6px;
-                    padding:3px 10px; color:var(--muted); font-size:11px; cursor:pointer; margin-left:12px; }
-        .copy-btn:hover { border-color:var(--accent2); }
-        .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px;
-                 font-weight:600; margin-left:8px; }
-        .badge-green { background:#064e3b; color:#34d399; }
-        .badge-yellow { background:#422006; color:#fbbf24; }
-        .setup-card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
-                      padding:24px; margin-bottom:16px; }
-        .setup-card h4 { font-size:14px; font-weight:600; margin-bottom:12px; }
-        .setup-step { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
-        .step-num { width:24px; height:24px; border-radius:50%; background:var(--accent);
-                    display:flex; align-items:center; justify-content:center; font-size:12px;
-                    font-weight:700; flex-shrink:0; }
-        .step-text { font-size:13px; line-height:1.6; color:var(--muted); padding-top:2px; }
-        code { background:var(--surface2); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; color:var(--accent2); }
+
+        .layout { display:flex; min-height:calc(100vh - 73px); }
+        .sidebar { width:220px; border-right:1px solid var(--border); padding:24px 16px;
+                   position:sticky; top:73px; height:calc(100vh - 73px); overflow-y:auto; flex-shrink:0; }
+        .sidebar-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+                         color:var(--muted); margin-bottom:10px; }
+        .sidebar a { display:block; padding:7px 10px; font-size:13px; color:var(--muted);
+                     text-decoration:none; border-radius:6px; transition:all 0.15s; margin-bottom:2px; }
+        .sidebar a:hover { color:var(--text); background:var(--surface2); }
+        .content { flex:1; max-width:780px; padding:40px; }
+
+        h2 { font-size:24px; font-weight:700; margin-bottom:6px; }
+        .subtitle { color:var(--muted); font-size:14px; margin-bottom:36px; line-height:1.6; }
+        .section { margin-bottom:48px; }
+        .section-title { font-size:15px; font-weight:700; margin-bottom:16px;
+                         padding-bottom:10px; border-bottom:1px solid var(--border);
+                         color:var(--accent2); }
+        .card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+                overflow:hidden; margin-bottom:16px; }
+        .card-header { padding:12px 18px; display:flex; align-items:center; gap:10px;
+                       border-bottom:1px solid var(--border); background:var(--surface2); }
+        .tag { font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px;
+               letter-spacing:0.5px; flex-shrink:0; }
+        .tag-post { background:#064e3b; color:#34d399; }
+        .tag-get { background:#1e3a5f; color:#60a5fa; }
+        .tag-curl { background:#3b1a1a; color:#f87171; }
+        .tag-python { background:#2d2b1e; color:#fbbf24; }
+        .tag-zapier { background:#2a1f3d; color:#c084fc; }
+        .tag-tool { background:#1a2d1a; color:#86efac; }
+        .card-path { font-family:monospace; font-size:13px; color:var(--text); }
+        .card-body { padding:18px; }
+        pre { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+              padding:16px; overflow-x:auto; font-family:monospace; font-size:12.5px; line-height:1.7;
+              position:relative; }
+        .copy-btn { position:absolute; top:10px; right:10px; background:var(--surface);
+                    border:1px solid var(--border); border-radius:6px; padding:3px 10px;
+                    color:var(--muted); font-size:11px; cursor:pointer; }
+        .copy-btn:hover { border-color:var(--accent2); color:var(--text); }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { text-align:left; color:var(--muted); font-weight:500; padding:7px 0;
+             border-bottom:1px solid var(--border); }
+        td { padding:9px 0; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; }
+        td:first-child { font-family:monospace; color:var(--accent2); width:170px; padding-right:12px; }
+        td:nth-child(2) { width:70px; color:var(--muted); font-size:11px; }
+        .req { color:#f87171; font-weight:700; }
+        .opt { color:var(--muted); }
+        code { background:var(--surface2); padding:1px 6px; border-radius:4px;
+               font-family:monospace; font-size:12px; color:var(--accent2); }
+        .tool-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .tool-card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+                     padding:14px 16px; }
+        .tool-name { font-size:13px; font-weight:600; margin-bottom:4px; }
+        .tool-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+        .tool-params { font-size:11px; color:var(--accent2); margin-top:6px; font-family:monospace; }
+        .platform-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 8px;
+                          background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+                          font-size:11px; margin-bottom:10px; }
+        .step { display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; }
+        .step-n { width:22px; height:22px; background:var(--accent); border-radius:50%;
+                  display:flex; align-items:center; justify-content:center; font-size:11px;
+                  font-weight:700; flex-shrink:0; margin-top:1px; }
+        .step-t { font-size:13px; color:var(--muted); line-height:1.6; }
     </style>
 </head>
 <body>
@@ -1439,7 +1461,7 @@ API_DOCS_HTML = """
         <div class="logo-icon">🔑</div>
         <div>
             <h1>API Documentation</h1>
-            <span>Integrate Sam into any automation</span>
+            <span>Sam GTM Engineer — live integrations</span>
         </div>
     </div>
     <div class="nav-links">
@@ -1448,141 +1470,300 @@ API_DOCS_HTML = """
     </div>
 </header>
 
-<div class="content">
-    <h2>GTM Engineer API</h2>
-    <p class="subtitle">Call Sam programmatically from Zapier, Make, n8n, or any HTTP client.</p>
+<div class="layout">
+<nav class="sidebar">
+    <div class="sidebar-title">Reference</div>
+    <a href="#overview">Overview</a>
+    <a href="#auth">Authentication</a>
+    <a href="#endpoint">Main Endpoint</a>
+    <a href="#response">Response Format</a>
+    <div class="sidebar-title" style="margin-top:16px">Examples</div>
+    <a href="#curl">cURL</a>
+    <a href="#python">Python</a>
+    <a href="#zapier">Zapier</a>
+    <a href="#make">Make / n8n</a>
+    <div class="sidebar-title" style="margin-top:16px">Live Tools</div>
+    <a href="#crm">CRM</a>
+    <a href="#email-auto">Email Automation</a>
+    <a href="#analytics">Analytics</a>
+    <a href="#engagement">Engagement</a>
+</nav>
 
-    <div class="section">
-        <div class="section-title">Setup — Add your API Key</div>
-        <div class="setup-card">
-            <h4>1. Set the key in Railway</h4>
-            <div class="setup-step">
-                <div class="step-num">1</div>
-                <div class="step-text">Go to Railway → your project → <strong>Variables</strong></div>
-            </div>
-            <div class="setup-step">
-                <div class="step-num">2</div>
-                <div class="step-text">Add a new variable: <code>GTM_API_KEY</code> = any secret string you choose (e.g. <code>sk-gtm-your-secret-here</code>)</div>
-            </div>
-            <div class="setup-step">
-                <div class="step-num">3</div>
-                <div class="step-text">Railway will redeploy. From then on, all API calls must include this key in the <code>X-API-Key</code> header.</div>
+<div class="content">
+    <h2>Sam — GTM Engineer API</h2>
+    <p class="subtitle">One endpoint. Sam receives your task, uses any connected tools (HubSpot, Apollo, Mailchimp, etc.), executes the work, and returns the result. Add API keys in Settings to activate live integrations.</p>
+
+    <!-- AUTH -->
+    <div class="section" id="auth">
+        <div class="section-title">Authentication</div>
+        <div class="card">
+            <div class="card-body">
+                <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Set your GTM API key in <strong>Settings → Sam Access Key</strong>. Then pass it in every request header:</p>
+                <pre><button class="copy-btn" onclick="cp(this)">Copy</button>X-API-Key: your-gtm-api-key</pre>
+                <p style="font-size:12px;color:var(--muted);margin-top:10px;">If no key is set, the endpoint is open. Once a key is set, all calls without it return <code>401 Unauthorized</code>.</p>
             </div>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">Endpoint</div>
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method">POST</span>
-                <span class="path">https://volvere-email-agent-production.up.railway.app/api/gtm</span>
+    <!-- ENDPOINT -->
+    <div class="section" id="endpoint">
+        <div class="section-title">Main Endpoint</div>
+        <div class="card">
+            <div class="card-header">
+                <span class="tag tag-post">POST</span>
+                <span class="card-path">/api/gtm</span>
             </div>
-            <div class="endpoint-body">
-                <table class="param-table">
-                    <tr><th>Header</th><th>Type</th><th>Description</th></tr>
-                    <tr>
-                        <td>X-API-Key</td>
-                        <td><span class="required">required</span></td>
-                        <td>Your GTM_API_KEY value from Railway</td>
-                    </tr>
-                    <tr>
-                        <td>Content-Type</td>
-                        <td><span class="required">required</span></td>
-                        <td>Must be <code>application/json</code></td>
-                    </tr>
+            <div class="card-body">
+                <table>
+                    <tr><th>Header</th><th></th><th>Description</th></tr>
+                    <tr><td>X-API-Key</td><td><span class="req">required</span></td><td>Your Sam access key from Settings</td></tr>
+                    <tr><td>Content-Type</td><td><span class="req">required</span></td><td><code>application/json</code></td></tr>
                 </table>
                 <br>
-                <table class="param-table">
-                    <tr><th>Body field</th><th>Type</th><th>Description</th></tr>
-                    <tr>
-                        <td>message</td>
-                        <td><span class="required">required</span></td>
-                        <td>The task for Sam (e.g. "Write a cold email sequence for fintech CFOs")</td>
-                    </tr>
-                    <tr>
-                        <td>history</td>
-                        <td><span class="optional">optional</span></td>
-                        <td>Array of prior messages for multi-turn conversations: <code>[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]</code></td>
-                    </tr>
+                <table>
+                    <tr><th>Body field</th><th></th><th>Description</th></tr>
+                    <tr><td>message</td><td><span class="req">required</span></td><td>The task for Sam — plain English, any GTM task</td></tr>
+                    <tr><td>history</td><td><span class="opt">optional</span></td><td>Prior conversation turns: <code>[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]</code></td></tr>
                 </table>
             </div>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">Examples</div>
-
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method">cURL</span>
-                <span class="path">Basic request</span>
-            </div>
-            <div class="endpoint-body">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <pre id="curl-example">curl -X POST https://volvere-email-agent-production.up.railway.app/api/gtm \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: YOUR_GTM_API_KEY" \\
-  -d '{"message": "Write a 3-email cold outreach sequence for e-commerce founders"}'</pre>
-            </div>
-        </div>
-
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method">JSON</span>
-                <span class="path">Response format</span>
-            </div>
-            <div class="endpoint-body">
+    <!-- RESPONSE -->
+    <div class="section" id="response">
+        <div class="section-title">Response Format</div>
+        <div class="card">
+            <div class="card-body">
                 <pre>{
-  "reply": "## Cold Email Sequence: E-Commerce Founders\\n\\n...",
-  "agent": "sam-gtm",
+  "reply":  "**Actions executed:**\\n- [hubspot_create_contact] Created John Smith...\\n\\n## Cold Email Sequence...",
+  "agent":  "sam-gtm",
   "status": "ok"
 }</pre>
+                <p style="font-size:12px;color:var(--muted);margin-top:10px;">When Sam uses connected tools, the <code>reply</code> starts with an <strong>Actions executed</strong> block listing every API call made, followed by his full deliverable.</p>
             </div>
         </div>
+    </div>
 
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method">Python</span>
-                <span class="path">requests library</span>
+    <!-- CURL -->
+    <div class="section" id="curl">
+        <div class="section-title">cURL Example</div>
+        <div class="card">
+            <div class="card-header"><span class="tag tag-curl">cURL</span><span class="card-path">Terminal</span></div>
+            <div class="card-body">
+                <pre><button class="copy-btn" onclick="cp(this)">Copy</button>curl -X POST https://volvere-email-agent-production.up.railway.app/api/gtm \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_GTM_API_KEY" \\
+  -d '{
+    "message": "Find 5 VP of Sales in Dubai on Apollo and create contacts in HubSpot"
+  }'</pre>
             </div>
-            <div class="endpoint-body">
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <pre>import requests
+        </div>
+    </div>
 
-response = requests.post(
+    <!-- PYTHON -->
+    <div class="section" id="python">
+        <div class="section-title">Python Example</div>
+        <div class="card">
+            <div class="card-header"><span class="tag tag-python">Python</span><span class="card-path">requests library</span></div>
+            <div class="card-body">
+                <pre><button class="copy-btn" onclick="cp(this)">Copy</button>import requests
+
+res = requests.post(
     "https://volvere-email-agent-production.up.railway.app/api/gtm",
     headers={
         "X-API-Key": "YOUR_GTM_API_KEY",
         "Content-Type": "application/json"
     },
-    json={"message": "Build an ICP for a B2B SaaS targeting HR teams"}
+    json={
+        "message": "Add john@acme.com to Mailchimp list abc123 and create a HubSpot deal"
+    }
 )
 
-print(response.json()["reply"])</pre>
-            </div>
-        </div>
-
-        <div class="endpoint">
-            <div class="endpoint-header">
-                <span class="method">Zapier</span>
-                <span class="path">Webhooks by Zapier — action setup</span>
-            </div>
-            <div class="endpoint-body">
-                <div class="setup-step"><div class="step-num">1</div><div class="step-text">Add a <strong>Webhooks by Zapier</strong> action → Method: <code>POST</code></div></div>
-                <div class="setup-step"><div class="step-num">2</div><div class="step-text">URL: <code>https://volvere-email-agent-production.up.railway.app/api/gtm</code></div></div>
-                <div class="setup-step"><div class="step-num">3</div><div class="step-text">Headers: <code>X-API-Key: YOUR_GTM_API_KEY</code> and <code>Content-Type: application/json</code></div></div>
-                <div class="setup-step"><div class="step-num">4</div><div class="step-text">Data: <code>{"message": "your task here or map from a previous step"}</code></div></div>
-                <div class="setup-step"><div class="step-num">5</div><div class="step-text">Sam's reply will be in the <code>reply</code> field of the response — map it to any next step.</div></div>
+data = res.json()
+print(data["reply"])</pre>
             </div>
         </div>
     </div>
+
+    <!-- ZAPIER -->
+    <div class="section" id="zapier">
+        <div class="section-title">Zapier Integration</div>
+        <div class="card">
+            <div class="card-header"><span class="tag tag-zapier">Zapier</span><span class="card-path">Webhooks by Zapier</span></div>
+            <div class="card-body">
+                <div class="step"><div class="step-n">1</div><div class="step-t">Add action: <strong>Webhooks by Zapier</strong> → Event: <code>POST</code></div></div>
+                <div class="step"><div class="step-n">2</div><div class="step-t">URL: <code>https://volvere-email-agent-production.up.railway.app/api/gtm</code></div></div>
+                <div class="step"><div class="step-n">3</div><div class="step-t">Headers: <code>X-API-Key: YOUR_KEY</code> · <code>Content-Type: application/json</code></div></div>
+                <div class="step"><div class="step-n">4</div><div class="step-t">Data (raw): <code>{"message": "map a field from your trigger here"}</code></div></div>
+                <div class="step"><div class="step-n">5</div><div class="step-t">Use <code>reply</code> from the response in any downstream Zapier step (Slack, Gmail, Notion, etc.)</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAKE / N8N -->
+    <div class="section" id="make">
+        <div class="section-title">Make / n8n</div>
+        <div class="card">
+            <div class="card-header"><span class="tag tag-zapier">Make</span><span class="card-path">HTTP module</span></div>
+            <div class="card-body">
+                <pre><button class="copy-btn" onclick="cp(this)">Copy</button>Module: HTTP → Make a request
+URL:    https://volvere-email-agent-production.up.railway.app/api/gtm
+Method: POST
+Headers:
+  X-API-Key: YOUR_GTM_API_KEY
+  Content-Type: application/json
+Body (JSON):
+  { "message": "{{trigger.message}}" }
+
+Output: parse response → use {{reply}}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRM TOOLS -->
+    <div class="section" id="crm">
+        <div class="section-title">Live Tools — CRM</div>
+        <div class="tool-grid">
+            <div class="tool-card">
+                <div class="platform-badge">🟠 HubSpot</div>
+                <div class="tool-name">hubspot_create_contact</div>
+                <div class="tool-desc">Create a new contact in HubSpot CRM</div>
+                <div class="tool-params">email, firstname, lastname, company, jobtitle</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟠 HubSpot</div>
+                <div class="tool-name">hubspot_create_deal</div>
+                <div class="tool-desc">Create a new deal in a pipeline stage</div>
+                <div class="tool-params">name, stage, amount</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟠 HubSpot</div>
+                <div class="tool-name">hubspot_get_contacts</div>
+                <div class="tool-desc">Retrieve recent contacts from HubSpot</div>
+                <div class="tool-params">limit</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟣 Pipedrive</div>
+                <div class="tool-name">pipedrive_create_person</div>
+                <div class="tool-desc">Add a person to Pipedrive CRM</div>
+                <div class="tool-params">name, email, phone</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟣 Pipedrive</div>
+                <div class="tool-name">pipedrive_create_deal</div>
+                <div class="tool-desc">Create a deal linked to a person</div>
+                <div class="tool-params">title, person_id, stage_id</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMAIL AUTOMATION TOOLS -->
+    <div class="section" id="email-auto">
+        <div class="section-title">Live Tools — Email Automation & Prospecting</div>
+        <div class="tool-grid">
+            <div class="tool-card">
+                <div class="platform-badge">🦧 Apollo</div>
+                <div class="tool-name">apollo_search_people</div>
+                <div class="tool-desc">Search for prospects by title, company, location</div>
+                <div class="tool-params">title, company, location, limit</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🦧 Apollo</div>
+                <div class="tool-name">apollo_add_to_sequence</div>
+                <div class="tool-desc">Add a contact to an Apollo email sequence</div>
+                <div class="tool-params">email, sequence_id</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">⚡ Instantly</div>
+                <div class="tool-name">instantly_get_campaigns</div>
+                <div class="tool-desc">List all campaigns in Instantly</div>
+                <div class="tool-params">(none)</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">⚡ Instantly</div>
+                <div class="tool-name">instantly_add_lead</div>
+                <div class="tool-desc">Add a lead to an Instantly campaign</div>
+                <div class="tool-params">email, first_name, last_name, campaign_id</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">📧 Mailchimp</div>
+                <div class="tool-name">mailchimp_get_lists</div>
+                <div class="tool-desc">Get all Mailchimp audience lists</div>
+                <div class="tool-params">(none)</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">📧 Mailchimp</div>
+                <div class="tool-name">mailchimp_add_subscriber</div>
+                <div class="tool-desc">Subscribe an email to a Mailchimp list</div>
+                <div class="tool-params">email, first_name, last_name, list_id</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🔵 ActiveCampaign</div>
+                <div class="tool-name">activecampaign_create_contact</div>
+                <div class="tool-desc">Create a contact in ActiveCampaign</div>
+                <div class="tool-params">email, first_name, last_name, phone</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS TOOLS -->
+    <div class="section" id="analytics">
+        <div class="section-title">Live Tools — Analytics</div>
+        <div class="tool-grid">
+            <div class="tool-card">
+                <div class="platform-badge">📊 Mixpanel</div>
+                <div class="tool-name">mixpanel_track_event</div>
+                <div class="tool-desc">Track a custom event in Mixpanel</div>
+                <div class="tool-params">event, distinct_id, properties</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟢 Segment</div>
+                <div class="tool-name">segment_identify</div>
+                <div class="tool-desc">Identify a user with traits in Segment</div>
+                <div class="tool-params">user_id, traits</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🟢 Segment</div>
+                <div class="tool-name">segment_track</div>
+                <div class="tool-desc">Track an event for a user in Segment</div>
+                <div class="tool-params">user_id, event, properties</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENGAGEMENT TOOLS -->
+    <div class="section" id="engagement">
+        <div class="section-title">Live Tools — Customer Engagement</div>
+        <div class="tool-grid">
+            <div class="tool-card">
+                <div class="platform-badge">💬 Intercom</div>
+                <div class="tool-name">intercom_create_contact</div>
+                <div class="tool-desc">Create a lead or contact in Intercom</div>
+                <div class="tool-params">email, name</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">💬 Intercom</div>
+                <div class="tool-name">intercom_send_message</div>
+                <div class="tool-desc">Send a message to a user in Intercom</div>
+                <div class="tool-params">user_id, message, admin_id</div>
+            </div>
+            <div class="tool-card">
+                <div class="platform-badge">🎯 Klaviyo</div>
+                <div class="tool-name">klaviyo_add_to_list</div>
+                <div class="tool-desc">Add a profile to a Klaviyo list</div>
+                <div class="tool-params">email, first_name, last_name, list_id</div>
+            </div>
+        </div>
+    </div>
+
+</div>
 </div>
 
 <script>
-    function copyCode(btn) {
-        const pre = btn.nextElementSibling;
-        navigator.clipboard.writeText(pre.textContent).then(() => {
+    function cp(btn) {
+        const pre = btn.parentElement;
+        const text = pre.textContent.replace('Copy','').replace('Copied!','').trim();
+        navigator.clipboard.writeText(text).then(() => {
             btn.textContent = 'Copied!';
             setTimeout(() => btn.textContent = 'Copy', 1500);
         });
