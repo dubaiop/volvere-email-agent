@@ -13,6 +13,7 @@ import anthropic
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
 from database import get_all_emails, get_stats, init_db, get_setting, set_setting
+from integrations import ALL_TOOLS, TOOL_FUNCTIONS
 from config import CLIENTS, CLAUDE_MODEL
 
 app = Flask(__name__)
@@ -1270,31 +1271,6 @@ def operations():
     return render_template_string(OPERATIONS_HTML, sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG)
 
 
-GTM_TOOLS = [
-    {
-        "name": "web_search",
-        "description": "Search the web for real-time information about companies, markets, competitors, pricing, news, or any GTM-relevant data.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The search query"}
-            },
-            "required": ["query"]
-        }
-    }
-]
-
-
-def run_web_search(query: str) -> str:
-    try:
-        from duckduckgo_search import DDGS
-        results = []
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=5):
-                results.append(f"{r['title']}\n{r['href']}\n{r['body']}")
-        return "\n\n---\n\n".join(results) if results else "No results found."
-    except Exception as e:
-        return f"Search error: {e}"
 
 
 def check_api_key():
@@ -1312,9 +1288,32 @@ def build_gtm_system_prompt():
     connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
     prompt = GTM_SYSTEM_PROMPT
     if connected:
-        prompt += f"\n\nConnected tools (you have API access to these — reference them specifically in your deliverables): {', '.join(connected)}."
-        prompt += "\nWhen producing playbooks, sequences, or workflows, give exact steps using these specific tools."
+        prompt += f"\n\nYou have LIVE API access to these connected tools: {', '.join(connected)}."
+        prompt += "\nUse the available tools to actually execute work — don't just describe it. Call the tools, get results, report what was done."
+    else:
+        prompt += "\n\nNo tools connected yet. Produce detailed deliverables and let the user know they can connect tools via Settings to enable live execution."
     return prompt
+
+
+def get_active_tools():
+    active = []
+    key_map = {
+        "apollo_api_key": ["apollo_search_people", "apollo_add_to_sequence"],
+        "hubspot_api_key": ["hubspot_create_contact", "hubspot_create_deal", "hubspot_get_contacts"],
+        "instantly_api_key": ["instantly_get_campaigns", "instantly_add_lead"],
+        "mailchimp_api_key": ["mailchimp_get_lists", "mailchimp_add_subscriber"],
+        "activecampaign_api_key": ["activecampaign_create_contact"],
+        "pipedrive_api_key": ["pipedrive_create_person", "pipedrive_create_deal"],
+        "intercom_api_key": ["intercom_create_contact", "intercom_send_message"],
+        "klaviyo_api_key": ["klaviyo_add_to_list"],
+        "mixpanel_api_key": ["mixpanel_track_event"],
+        "segment_api_key": ["segment_identify", "segment_track"],
+    }
+    enabled_names = set()
+    for setting_key, tool_names in key_map.items():
+        if get_setting(setting_key):
+            enabled_names.update(tool_names)
+    return [t for t in ALL_TOOLS if t["name"] in enabled_names]
 
 
 @app.route("/api/gtm", methods=["POST"])
@@ -1328,15 +1327,40 @@ def gtm_chat():
 
         messages = history + [{"role": "user", "content": message}]
         client = anthropic.Anthropic()
+        active_tools = get_active_tools()
+        tool_log = []
 
-        resp = client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=2048,
-            system=build_gtm_system_prompt(),
-            messages=messages,
-        )
-        reply = resp.content[0].text.strip()
-        return jsonify({"reply": reply, "agent": "sam-gtm", "status": "ok"})
+        while True:
+            kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
+                         system=build_gtm_system_prompt(), messages=messages)
+            if active_tools:
+                kwargs["tools"] = active_tools
+
+            resp = client.messages.create(**kwargs)
+
+            if resp.stop_reason == "tool_use":
+                tool_results = []
+                for block in resp.content:
+                    if block.type == "tool_use":
+                        fn = TOOL_FUNCTIONS.get(block.name)
+                        if fn:
+                            result = fn(**block.input)
+                        else:
+                            result = f"Unknown tool: {block.name}"
+                        tool_log.append(f"[{block.name}] {result}")
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result,
+                        })
+                messages.append({"role": "assistant", "content": resp.content})
+                messages.append({"role": "user", "content": tool_results})
+            else:
+                reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+                if tool_log:
+                    reply = "**Actions executed:**\n" + "\n".join(f"- {l}" for l in tool_log) + "\n\n" + reply
+                return jsonify({"reply": reply.strip(), "agent": "sam-gtm", "status": "ok"})
+
     except Exception as e:
         print(f"GTM chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
