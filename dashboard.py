@@ -52,6 +52,7 @@ DASHBOARD_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volvere — Email Agent</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
     <style>
         :root {
             --bg: #0f0f13; --surface: #1a1a24; --surface2: #22222f;
@@ -189,7 +190,7 @@ DASHBOARD_HTML = """
 <body>
 <header>
     <div class="logo">
-        <div class="logo-icon">✉</div>
+        <div class="logo-icon"><svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#vg1)"/><path d="M9 10 L18 25 L27 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
         <div>
             <h1>Volvere Email Agent</h1>
             <span>AI-powered C-suite advisors</span>
@@ -370,6 +371,7 @@ MEETING_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volvere — Board Meeting</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
     <style>
         :root {
             --bg: #0f0f13; --surface: #1a1a24; --surface2: #22222f;
@@ -1273,6 +1275,7 @@ OPERATIONS_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volvere — Operations Agents</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -1406,7 +1409,7 @@ OPERATIONS_HTML = """
 <body>
 <header>
     <div class="logo">
-        <div class="logo-icon">⚙️</div>
+        <div class="logo-icon"><svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#vg2)"/><path d="M9 10 L18 25 L27 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
         <div>
             <h1>Operations Agents</h1>
             <span>Specialized AI operators</span>
@@ -2209,6 +2212,7 @@ API_DOCS_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volvere — API Docs</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
     <style>
         :root { --bg:#0f0f13; --surface:#1a1a24; --surface2:#22222f; --border:#2e2e3e;
                 --accent:#059669; --accent2:#34d399; --text:#e8e8f0; --muted:#6b6b80; }
