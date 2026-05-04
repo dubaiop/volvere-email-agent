@@ -198,6 +198,7 @@ DASHBOARD_HTML = """
             <div class="live-dot"></div>
             <span>Live · refreshing in <span id="countdown">60</span>s</span>
         </div>
+        <a href="/operations" class="meeting-btn" style="background:linear-gradient(135deg,#059669,#34d399)">⚙️ Operations</a>
         <a href="/meeting" class="meeting-btn">🎙 Start Board Meeting</a>
     </div>
 </header>
@@ -746,6 +747,331 @@ def meeting_chat():
             results[client_id] = parsed
 
     return jsonify(results)
+
+
+GTM_SYSTEM_PROMPT = """You are a Go-to-Market (GTM) Engineer — an elite operator who works at the intersection of strategy, technology, and execution.
+
+Your expertise covers:
+- Building and managing GTM tech stacks: CRM systems (Salesforce, HubSpot), email automation, analytics platforms (Tableau, Mixpanel), and customer engagement tools
+- Data analysis: spotting trends, building dashboards, interpreting customer and market data to guide key decisions
+- Process optimization: simplifying workflows so sales, marketing, and customer success teams operate efficiently
+- Cross-functional alignment: bridging product, sales, marketing, and customer success teams
+- Experimentation: A/B testing, piloting new ideas, and iterating on what works
+- Technical skills: SQL, Python, API integrations, and automation
+
+Your philosophy: GTM Engineers reverse hyper-specialization. You connect the dots across sales, marketing, and operations — and execute on all of them. You replace up to 70% of what traditional SDR teams do by leveraging the right tech stack.
+
+Be direct, practical, and execution-focused. Give concrete recommendations with specific tools, frameworks, and next steps. Write in plain prose — no markdown, no asterisks, no hashtags.
+Sign your responses as 'Sam — Your GTM Engineer'."""
+
+
+OPERATIONS_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volvere — Operations Agents</title>
+    <style>
+        :root {
+            --bg: #0f0f13; --surface: #1a1a24; --surface2: #22222f;
+            --border: #2e2e3e; --accent: #059669; --accent2: #34d399;
+            --text: #e8e8f0; --muted: #6b6b80;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+        header { padding: 20px 40px; display: flex; align-items: center;
+                 justify-content: space-between; border-bottom: 1px solid var(--border);
+                 background: var(--surface); }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 36px; height: 36px;
+                     background: linear-gradient(135deg, var(--accent), var(--accent2));
+                     border-radius: 10px; display: flex; align-items: center;
+                     justify-content: center; font-size: 18px; }
+        .logo h1 { font-size: 18px; font-weight: 600; }
+        .logo span { font-size: 12px; color: var(--muted); }
+        .nav-links { display: flex; gap: 12px; }
+        .nav-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+                   border-radius: 8px; border: 1px solid var(--border); background: var(--surface2);
+                   color: var(--text); font-size: 13px; font-weight: 500; text-decoration: none;
+                   transition: border-color 0.2s; }
+        .nav-btn:hover { border-color: var(--accent2); }
+
+        .page-wrap { display: flex; flex: 1; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; border-right: 1px solid var(--border); background: var(--surface);
+                   padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+        .sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted);
+                         letter-spacing: 1px; text-transform: uppercase; padding: 0 8px 8px; }
+        .agent-btn { display: flex; align-items: center; gap: 12px; padding: 12px;
+                     border-radius: 10px; cursor: pointer; transition: background 0.15s;
+                     border: 1px solid transparent; }
+        .agent-btn:hover { background: var(--surface2); }
+        .agent-btn.active { background: var(--surface2); border-color: var(--accent); }
+        .agent-icon { width: 36px; height: 36px; border-radius: 10px; display: flex;
+                      align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .agent-name { font-size: 14px; font-weight: 600; }
+        .agent-tag { font-size: 11px; color: var(--muted); margin-top: 1px; }
+        .coming-soon { opacity: 0.4; cursor: default; }
+        .coming-soon:hover { background: transparent; }
+        .cs-badge { font-size: 10px; background: var(--surface2); border: 1px solid var(--border);
+                    padding: 2px 6px; border-radius: 4px; color: var(--muted); margin-left: auto; }
+
+        /* Chat area */
+        .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .agent-header { padding: 20px 32px; border-bottom: 1px solid var(--border);
+                        background: var(--surface); display: flex; align-items: center; gap: 16px; }
+        .agent-header-icon { width: 44px; height: 44px; border-radius: 12px;
+                             background: linear-gradient(135deg, #059669, #34d399);
+                             display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .agent-header-info h2 { font-size: 17px; font-weight: 600; }
+        .agent-header-info p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+        .online-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%;
+                      animation: pulse 2s infinite; margin-left: auto; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .messages { flex: 1; overflow-y: auto; padding: 24px 32px; display: flex;
+                    flex-direction: column; gap: 20px; }
+        .msg { display: flex; gap: 12px; max-width: 780px; }
+        .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+        .msg-avatar { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+                      display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .msg.agent .msg-avatar { background: linear-gradient(135deg, #059669, #34d399); }
+        .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
+        .msg-bubble { background: var(--surface); border: 1px solid var(--border);
+                      border-radius: 14px; padding: 14px 18px; font-size: 14px;
+                      line-height: 1.65; white-space: pre-wrap; }
+        .msg.user .msg-bubble { background: var(--surface2); }
+        .msg-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+
+        .typing { display: none; align-items: center; gap: 6px; padding: 0 32px; }
+        .typing.show { display: flex; }
+        .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2);
+                       animation: bounce 1.2s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+        .input-area { padding: 16px 32px 24px; border-top: 1px solid var(--border);
+                      background: var(--surface); }
+        .input-row { display: flex; gap: 10px; background: var(--surface2);
+                     border: 1px solid var(--border); border-radius: 12px; padding: 4px 4px 4px 16px;
+                     transition: border-color 0.2s; }
+        .input-row:focus-within { border-color: var(--accent); }
+        #msg-input { flex: 1; background: none; border: none; outline: none;
+                     color: var(--text); font-size: 14px; padding: 10px 0;
+                     font-family: inherit; resize: none; max-height: 120px; }
+        #msg-input::placeholder { color: var(--muted); }
+        .send-btn { background: linear-gradient(135deg, var(--accent), var(--accent2));
+                    border: none; border-radius: 9px; width: 38px; height: 38px;
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; color: white; font-size: 16px; flex-shrink: 0;
+                    align-self: flex-end; margin-bottom: 2px; transition: opacity 0.2s; }
+        .send-btn:hover { opacity: 0.85; }
+
+        .welcome { text-align: center; padding: 60px 40px; color: var(--muted); }
+        .welcome-icon { font-size: 48px; margin-bottom: 16px; }
+        .welcome h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+        .welcome p { font-size: 14px; line-height: 1.6; max-width: 480px; margin: 0 auto; }
+        .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
+        .suggestion { background: var(--surface2); border: 1px solid var(--border);
+                      border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+                      transition: border-color 0.2s; }
+        .suggestion:hover { border-color: var(--accent2); color: var(--text); }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <div class="logo-icon">⚙️</div>
+        <div>
+            <h1>Operations Agents</h1>
+            <span>Specialized AI operators</span>
+        </div>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-btn">📧 Email Dashboard</a>
+        <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
+    </div>
+</header>
+
+<div class="page-wrap">
+    <div class="sidebar">
+        <div class="sidebar-title">Agents</div>
+
+        <div class="agent-btn active" onclick="selectAgent('gtm')">
+            <div class="agent-icon">🚀</div>
+            <div>
+                <div class="agent-name">Sam</div>
+                <div class="agent-tag">GTM Engineer</div>
+            </div>
+        </div>
+
+        <div class="agent-btn coming-soon">
+            <div class="agent-icon" style="opacity:0.4">📊</div>
+            <div>
+                <div class="agent-name" style="color:var(--muted)">Revenue Ops</div>
+                <div class="agent-tag">Coming soon</div>
+            </div>
+            <span class="cs-badge">Soon</span>
+        </div>
+
+        <div class="agent-btn coming-soon">
+            <div class="agent-icon" style="opacity:0.4">🎯</div>
+            <div>
+                <div class="agent-name" style="color:var(--muted)">Sales Ops</div>
+                <div class="agent-tag">Coming soon</div>
+            </div>
+            <span class="cs-badge">Soon</span>
+        </div>
+
+        <div class="agent-btn coming-soon">
+            <div class="agent-icon" style="opacity:0.4">📈</div>
+            <div>
+                <div class="agent-name" style="color:var(--muted)">Growth Hacker</div>
+                <div class="agent-tag">Coming soon</div>
+            </div>
+            <span class="cs-badge">Soon</span>
+        </div>
+    </div>
+
+    <div class="chat-wrap">
+        <div class="agent-header">
+            <div class="agent-header-icon">🚀</div>
+            <div class="agent-header-info">
+                <h2>Sam — GTM Engineer</h2>
+                <p>Go-to-Market strategy, tech stack, sales ops, growth execution</p>
+            </div>
+            <div class="online-dot"></div>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">🚀</div>
+                <h3>Hey, I'm Sam — your GTM Engineer</h3>
+                <p>I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
+                <div class="suggestions">
+                    <div class="suggestion" onclick="sendSuggestion(this)">How do I build a GTM tech stack from scratch?</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">What CRM should a seed-stage startup use?</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">How do I automate lead qualification?</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">What metrics should I track for GTM success?</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing" id="typing">
+            <span></span><span></span><span></span>
+            <span style="font-size:12px;color:var(--muted);margin-left:4px">Sam is thinking…</span>
+        </div>
+
+        <div class="input-area">
+            <div class="input-row">
+                <textarea id="msg-input" placeholder="Ask Sam anything about GTM strategy, tools, or execution…" rows="1"></textarea>
+                <button class="send-btn" onclick="sendMessage()">↑</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let history = [];
+
+    function selectAgent(id) {
+        document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+
+    function sendSuggestion(el) {
+        document.getElementById('msg-input').value = el.textContent;
+        sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        input.style.height = 'auto';
+
+        document.getElementById('welcome')?.remove();
+        addMessage('user', text, 'You');
+
+        document.getElementById('typing').classList.add('show');
+
+        history.push({ role: 'user', content: text });
+
+        try {
+            const res = await fetch('/api/gtm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+            });
+            const data = await res.json();
+            document.getElementById('typing').classList.remove('show');
+            addMessage('agent', data.reply, 'Sam — GTM Engineer');
+            history.push({ role: 'assistant', content: data.reply });
+        } catch(e) {
+            document.getElementById('typing').classList.remove('show');
+            addMessage('agent', 'Something went wrong. Please try again.', 'Sam');
+        }
+    }
+
+    function addMessage(type, text, name) {
+        const msgs = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = `
+            <div class="msg-avatar">${type === 'agent' ? '🚀' : '👤'}</div>
+            <div>
+                <div class="msg-name">${name}</div>
+                <div class="msg-bubble">${escapeHtml(text)}</div>
+            </div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function escapeHtml(t) {
+        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    const input = document.getElementById('msg-input');
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+</script>
+</body>
+</html>
+"""
+
+
+@app.route("/operations")
+def operations():
+    return render_template_string(OPERATIONS_HTML)
+
+
+@app.route("/api/gtm", methods=["POST"])
+def gtm_chat():
+    data = request.json
+    message = data.get("message", "")
+    history = data.get("history", [])
+
+    messages = history + [{"role": "user", "content": message}]
+
+    client = anthropic.Anthropic()
+    resp = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=1024,
+        system=GTM_SYSTEM_PROMPT,
+        messages=messages,
+    )
+    return jsonify({"reply": resp.content[0].text.strip()})
 
 
 if __name__ == "__main__":
