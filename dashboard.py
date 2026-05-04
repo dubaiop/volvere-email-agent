@@ -1523,7 +1523,7 @@ OPERATIONS_HTML = """
     <div class="sidebar">
         <div class="sidebar-title">Agents</div>
 
-        <div class="agent-btn active" onclick="selectAgent('gtm')">
+        <div class="agent-btn active" onclick="selectAgent('gtm', this)">
             <div class="agent-icon">{{ sam_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Sam</div>
@@ -1531,7 +1531,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('marketing')">
+        <div class="agent-btn" onclick="selectAgent('marketing', this)">
             <div class="agent-icon">{{ maya_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Maya</div>
@@ -1539,7 +1539,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('product')">
+        <div class="agent-btn" onclick="selectAgent('product', this)">
             <div class="agent-icon">{{ alex_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Alex</div>
@@ -1547,7 +1547,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('sales')">
+        <div class="agent-btn" onclick="selectAgent('sales', this)">
             <div class="agent-icon">{{ jordan_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Jordan</div>
@@ -1555,7 +1555,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('productdev')">
+        <div class="agent-btn" onclick="selectAgent('productdev', this)">
             <div class="agent-icon">{{ riley_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Riley</div>
@@ -1565,7 +1565,7 @@ OPERATIONS_HTML = """
 
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
 
-        <div class="agent-btn" onclick="selectAgent('finance')">
+        <div class="agent-btn" onclick="selectAgent('finance', this)">
             <div class="agent-icon">{{ morgan_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Morgan</div>
@@ -1573,7 +1573,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('accounting')">
+        <div class="agent-btn" onclick="selectAgent('accounting', this)">
             <div class="agent-icon">{{ casey_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Casey</div>
@@ -1581,7 +1581,7 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
-        <div class="agent-btn" onclick="selectAgent('economics')">
+        <div class="agent-btn" onclick="selectAgent('economics', this)">
             <div class="agent-icon">{{ quinn_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Quinn</div>
@@ -1772,13 +1772,13 @@ OPERATIONS_HTML = """
         } catch(e) { return false; }
     }
 
-    function selectAgent(id) {
+    function selectAgent(id, btn) {
         if (id === currentAgent) return;
         currentAgent = id;
         history = [];
         clearAttachment();
         document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        if (btn) btn.classList.add('active');
         const a = AGENTS[id];
         document.getElementById('agent-header-icon').innerHTML = a.avatarLg;
         document.getElementById('agent-header-name').textContent = a.title;
