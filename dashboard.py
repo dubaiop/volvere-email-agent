@@ -827,6 +827,9 @@ SAM_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
   <!-- collar -->
   <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
 </svg>"""
+
+
+OPERATIONS_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
