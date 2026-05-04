@@ -775,7 +775,58 @@ Rules:
 - Sign off as: Sam — GTM Engineer"""
 
 
-OPERATIONS_HTML = """
+SAM_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#064e3b"/>
+  <!-- body / shirt -->
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#059669"/>
+  <rect x="13" y="23" width="10" height="5" fill="#065f46"/>
+  <!-- neck -->
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <!-- head -->
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <!-- hair -->
+  <ellipse cx="18" cy="8" rx="8" ry="5" fill="#1c1917"/>
+  <rect x="10" y="8" width="3" height="6" rx="1.5" fill="#1c1917"/>
+  <rect x="23" y="8" width="3" height="6" rx="1.5" fill="#1c1917"/>
+  <!-- eyes -->
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <!-- eye shine -->
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <!-- nose -->
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <!-- smile -->
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <!-- collar -->
+  <polygon points="15,23 18,26 21,23" fill="white" opacity="0.9"/>
+</svg>"""
+
+SAM_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#064e3b"/>
+  <!-- body -->
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#059669"/>
+  <rect x="16" y="28" width="12" height="6" fill="#065f46"/>
+  <!-- neck -->
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <!-- head -->
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <!-- hair -->
+  <ellipse cx="22" cy="10" rx="10" ry="6" fill="#1c1917"/>
+  <rect x="12" y="10" width="4" height="7" rx="2" fill="#1c1917"/>
+  <rect x="28" y="10" width="4" height="7" rx="2" fill="#1c1917"/>
+  <!-- eyes -->
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <!-- nose -->
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <!-- smile -->
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- collar -->
+  <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
+</svg>"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -822,7 +873,9 @@ OPERATIONS_HTML = """
         .agent-btn:hover { background: var(--surface2); }
         .agent-btn.active { background: var(--surface2); border-color: var(--accent); }
         .agent-icon { width: 36px; height: 36px; border-radius: 10px; display: flex;
-                      align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+                      align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+                      overflow: hidden; }
+        .agent-icon img, .agent-icon svg { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
         .agent-name { font-size: 14px; font-weight: 600; }
         .agent-tag { font-size: 11px; color: var(--muted); margin-top: 1px; }
         .coming-soon { opacity: 0.4; cursor: default; }
@@ -913,7 +966,7 @@ OPERATIONS_HTML = """
         <div class="sidebar-title">Agents</div>
 
         <div class="agent-btn active" onclick="selectAgent('gtm')">
-            <div class="agent-icon">🚀</div>
+            <div class="agent-icon">{{ sam_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Sam</div>
                 <div class="agent-tag">GTM Engineer</div>
@@ -950,7 +1003,7 @@ OPERATIONS_HTML = """
 
     <div class="chat-wrap">
         <div class="agent-header">
-            <div class="agent-header-icon">🚀</div>
+            <div class="agent-header-icon" style="background:none;padding:0;overflow:hidden;">{{ sam_avatar_lg | safe }}</div>
             <div class="agent-header-info">
                 <h2>Sam — GTM Engineer</h2>
                 <p>Go-to-Market strategy, tech stack, sales ops, growth execution</p>
@@ -960,7 +1013,7 @@ OPERATIONS_HTML = """
 
         <div class="messages" id="messages">
             <div class="welcome" id="welcome">
-                <div class="welcome-icon">🚀</div>
+                <div class="welcome-icon" style="display:flex;justify-content:center;"><div style="width:72px;height:72px;border-radius:18px;overflow:hidden;">{{ sam_avatar_lg | safe }}</div></div>
                 <h3>Hey, I'm Sam — your GTM Engineer</h3>
                 <p>I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
                 <div class="suggestions">
@@ -987,6 +1040,7 @@ OPERATIONS_HTML = """
 </div>
 
 <script>
+    const SAM_SVG = {{ sam_avatar_sm | tojson }};
     let history = [];
 
     function selectAgent(id) {
@@ -1037,7 +1091,7 @@ OPERATIONS_HTML = """
             ? `<button onclick="copyText(this)" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
             : '';
         div.innerHTML = `
-            <div class="msg-avatar">${type === 'agent' ? '🚀' : '👤'}</div>
+            <div class="msg-avatar" style="background:none;padding:0;overflow:hidden;border-radius:10px;">${type === 'agent' ? SAM_SVG : '👤'}</div>
             <div>
                 <div class="msg-name">${name}</div>
                 <div class="msg-bubble">${escapeHtml(text)}</div>
@@ -1075,7 +1129,7 @@ OPERATIONS_HTML = """
 
 @app.route("/operations")
 def operations():
-    return render_template_string(OPERATIONS_HTML)
+    return render_template_string(OPERATIONS_HTML, sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG)
 
 
 GTM_TOOLS = [
