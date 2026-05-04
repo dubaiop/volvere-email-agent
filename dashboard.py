@@ -1172,8 +1172,13 @@ OPERATIONS_HTML = """
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text, history: history.slice(0, -1) })
             });
-            const data = await res.json();
+            const raw = await res.text();
             document.getElementById('typing').classList.remove('show');
+            let data;
+            try { data = JSON.parse(raw); } catch(_) {
+                addMessage('agent', '⚠️ Server error (HTTP ' + res.status + ')', 'Sam');
+                return;
+            }
             if (data.error) {
                 addMessage('agent', '⚠️ ' + data.error, 'Sam');
             } else {
@@ -1321,9 +1326,9 @@ def get_active_tools():
 
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
-    if not check_api_key():
-        return jsonify({"error": "Invalid or missing API key"}), 401
     try:
+        if not check_api_key():
+            return jsonify({"error": "Invalid or missing API key"}), 401
         data = request.json
         message = data.get("message", "")
         history = data.get("history", [])
