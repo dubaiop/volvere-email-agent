@@ -836,6 +836,7 @@ OPERATIONS_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volvere — Operations Agents</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg: #0f0f13; --surface: #1a1a24; --surface2: #22222f;
@@ -948,6 +949,21 @@ OPERATIONS_HTML = """
                       border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
                       transition: border-color 0.2s; }
         .suggestion:hover { border-color: var(--accent2); color: var(--text); }
+
+        /* Markdown rendering */
+        .msg-bubble h1,.msg-bubble h2,.msg-bubble h3 { font-size:14px; font-weight:700; margin:14px 0 6px; color:var(--accent2); }
+        .msg-bubble h1 { font-size:16px; }
+        .msg-bubble p { margin:6px 0; }
+        .msg-bubble ul,.msg-bubble ol { padding-left:20px; margin:6px 0; }
+        .msg-bubble li { margin:3px 0; }
+        .msg-bubble strong { color:var(--text); font-weight:600; }
+        .msg-bubble em { color:var(--accent2); font-style:italic; }
+        .msg-bubble hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
+        .msg-bubble blockquote { border-left:3px solid var(--accent); padding:4px 12px; margin:8px 0; color:var(--muted); font-style:italic; }
+        .msg-bubble code { background:var(--surface2); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; }
+        .msg-bubble pre { background:var(--surface2); padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; }
+        .msg-bubble pre code { background:none; padding:0; }
+        .msg-bubble a { color:var(--accent2); }
     </style>
 </head>
 <body>
@@ -1093,22 +1109,22 @@ OPERATIONS_HTML = """
         const msgs = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
+        const bubbleContent = type === 'agent' ? marked.parse(text) : escapeHtml(text);
         const copyBtn = type === 'agent'
-            ? `<button onclick="copyText(this)" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
+            ? `<button onclick="copyText(this, ${JSON.stringify(text)})" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
             : '';
         div.innerHTML = `
             <div class="msg-avatar" style="background:none;padding:0;overflow:hidden;border-radius:10px;">${type === 'agent' ? SAM_SVG : '👤'}</div>
             <div>
                 <div class="msg-name">${name}</div>
-                <div class="msg-bubble">${escapeHtml(text)}</div>
+                <div class="msg-bubble">${bubbleContent}</div>
                 ${copyBtn}
             </div>`;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
     }
 
-    function copyText(btn) {
-        const text = btn.previousElementSibling.textContent;
+    function copyText(btn, text) {
         navigator.clipboard.writeText(text).then(() => {
             btn.textContent = 'Copied!';
             setTimeout(() => btn.textContent = 'Copy', 1500);
