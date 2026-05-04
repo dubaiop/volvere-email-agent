@@ -13,7 +13,28 @@ def _post(url, data, headers):
     req = urllib.request.Request(url, data=json.dumps(data).encode(), headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req) as r:
-            return json.loads(r.read().decode())
+            body = r.read().decode()
+            return json.loads(body) if body.strip() else {}
+    except urllib.error.HTTPError as e:
+        return {"error": e.read().decode(), "status": e.code}
+
+
+def _patch(url, data, headers):
+    req = urllib.request.Request(url, data=json.dumps(data).encode(), headers=headers, method="PATCH")
+    try:
+        with urllib.request.urlopen(req) as r:
+            body = r.read().decode()
+            return json.loads(body) if body.strip() else {}
+    except urllib.error.HTTPError as e:
+        return {"error": e.read().decode(), "status": e.code}
+
+
+def _put(url, data, headers):
+    req = urllib.request.Request(url, data=json.dumps(data).encode(), headers=headers, method="PUT")
+    try:
+        with urllib.request.urlopen(req) as r:
+            body = r.read().decode()
+            return json.loads(body) if body.strip() else {}
     except urllib.error.HTTPError as e:
         return {"error": e.read().decode(), "status": e.code}
 
@@ -488,6 +509,136 @@ def jira_get_issues(project_key: str, max_results: int = 10) -> str:
     return "\n".join(lines)
 
 
+# ── EXCEL (Microsoft Graph) ───────────────────────────────────────────────────
+
+def excel_read_range(sheet_name: str, range_address: str, file_id: str = "") -> str:
+    token = get_setting("microsoft_graph_token")
+    if not token:
+        return "Microsoft Graph token not configured. Add it in Settings."
+    fid = file_id or get_setting("excel_file_id")
+    if not fid:
+        return "Excel file ID not configured. Add 'excel_file_id' in Settings."
+    url = (f"https://graph.microsoft.com/v1.0/me/drive/items/{fid}"
+           f"/workbook/worksheets/{sheet_name}/range(address='{range_address}')")
+    result = _get(url, {"Authorization": f"Bearer {token}"})
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Excel error: {msg}"
+    values = result.get("values", [])
+    if not values:
+        return f"No data in {sheet_name}!{range_address}."
+    lines = [f"Excel {sheet_name}!{range_address}:"]
+    for row in values[:50]:
+        lines.append(" | ".join(str(c) for c in row))
+    return "\n".join(lines)
+
+
+def excel_write_range(sheet_name: str, range_address: str, values: list, file_id: str = "") -> str:
+    token = get_setting("microsoft_graph_token")
+    if not token:
+        return "Microsoft Graph token not configured."
+    fid = file_id or get_setting("excel_file_id")
+    if not fid:
+        return "Excel file ID not configured."
+    url = (f"https://graph.microsoft.com/v1.0/me/drive/items/{fid}"
+           f"/workbook/worksheets/{sheet_name}/range(address='{range_address}')")
+    result = _patch(url, {"values": values},
+                    {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Excel error: {msg}"
+    return f"Updated Excel {sheet_name}!{range_address} with {len(values)} row(s)."
+
+
+# ── GOOGLE SHEETS ────────────────────────────────────────────────────────────
+
+def sheets_read(range_notation: str, spreadsheet_id: str = "") -> str:
+    token = get_setting("google_sheets_token")
+    if not token:
+        return "Google Sheets API token not configured. Add it in Settings."
+    sid = spreadsheet_id or get_setting("google_spreadsheet_id")
+    if not sid:
+        return "Google Spreadsheet ID not configured. Add 'google_spreadsheet_id' in Settings."
+    result = _get(f"https://sheets.googleapis.com/v4/spreadsheets/{sid}/values/{range_notation}",
+                  {"Authorization": f"Bearer {token}"})
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Google Sheets error: {msg}"
+    values = result.get("values", [])
+    if not values:
+        return f"No data in range {range_notation}."
+    lines = [f"Google Sheets {range_notation}:"]
+    for row in values[:50]:
+        lines.append(" | ".join(str(c) for c in row))
+    return "\n".join(lines)
+
+
+def sheets_write(range_notation: str, values: list, spreadsheet_id: str = "") -> str:
+    token = get_setting("google_sheets_token")
+    if not token:
+        return "Google Sheets API token not configured."
+    sid = spreadsheet_id or get_setting("google_spreadsheet_id")
+    if not sid:
+        return "Google Spreadsheet ID not configured."
+    url = (f"https://sheets.googleapis.com/v4/spreadsheets/{sid}/values/{range_notation}"
+           f"?valueInputOption=USER_ENTERED")
+    result = _put(url, {"range": range_notation, "values": values, "majorDimension": "ROWS"},
+                  {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Google Sheets error: {msg}"
+    updated = result.get("updatedCells", 0)
+    return f"Updated {updated} cells in Google Sheets range {range_notation}."
+
+
+# ── EXCHANGE / OUTLOOK (Microsoft Graph) ─────────────────────────────────────
+
+def exchange_get_calendar(days_ahead: int = 7) -> str:
+    token = get_setting("microsoft_graph_token")
+    if not token:
+        return "Microsoft Graph token not configured. Add it in Settings."
+    from datetime import datetime, timedelta
+    now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    end = (datetime.utcnow() + timedelta(days=days_ahead)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    result = _get(
+        f"https://graph.microsoft.com/v1.0/me/calendarView"
+        f"?startDateTime={now}&endDateTime={end}&$top=20&$select=subject,start,end,organizer",
+        {"Authorization": f"Bearer {token}"}
+    )
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Exchange error: {msg}"
+    events = result.get("value", [])
+    if not events:
+        return f"No calendar events in the next {days_ahead} days."
+    lines = [f"Upcoming events (next {days_ahead} days, {len(events)} total):"]
+    for e in events:
+        subject = e.get("subject", "No title")
+        start = e.get("start", {}).get("dateTime", "")[:16].replace("T", " ")
+        organizer = e.get("organizer", {}).get("emailAddress", {}).get("name", "")
+        lines.append(f"- {start} | {subject}" + (f" (by {organizer})" if organizer else ""))
+    return "\n".join(lines)
+
+
+def exchange_send_email(to: str, subject: str, body: str) -> str:
+    token = get_setting("microsoft_graph_token")
+    if not token:
+        return "Microsoft Graph token not configured."
+    data = {
+        "message": {
+            "subject": subject,
+            "body": {"contentType": "Text", "content": body},
+            "toRecipients": [{"emailAddress": {"address": addr.strip()}} for addr in to.split(",")]
+        }
+    }
+    result = _post("https://graph.microsoft.com/v1.0/me/sendMail", data,
+                   {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    if "error" in result:
+        msg = result["error"].get("message", str(result["error"])) if isinstance(result["error"], dict) else result["error"]
+        return f"Exchange error: {msg}"
+    return f"Email sent to {to} — Subject: '{subject}'"
+
+
 # ── TOOL REGISTRY ────────────────────────────────────────────────────────────
 
 TOOL_FUNCTIONS = {
@@ -516,6 +667,12 @@ TOOL_FUNCTIONS = {
     "linear_get_issues": linear_get_issues,
     "jira_create_issue": jira_create_issue,
     "jira_get_issues": jira_get_issues,
+    "excel_read_range": excel_read_range,
+    "excel_write_range": excel_write_range,
+    "sheets_read": sheets_read,
+    "sheets_write": sheets_write,
+    "exchange_get_calendar": exchange_get_calendar,
+    "exchange_send_email": exchange_send_email,
 }
 
 ALL_TOOLS = [
@@ -544,4 +701,10 @@ ALL_TOOLS = [
     {"name": "linear_get_issues", "description": "List recent issues from Linear.", "input_schema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 10}}}},
     {"name": "jira_create_issue", "description": "Create an issue in Jira.", "input_schema": {"type": "object", "properties": {"project_key": {"type": "string"}, "summary": {"type": "string"}, "description": {"type": "string"}, "issue_type": {"type": "string", "default": "Task"}}, "required": ["project_key", "summary"]}},
     {"name": "jira_get_issues", "description": "List recent issues from a Jira project.", "input_schema": {"type": "object", "properties": {"project_key": {"type": "string"}, "max_results": {"type": "integer", "default": 10}}, "required": ["project_key"]}},
+    {"name": "excel_read_range", "description": "Read a range of cells from a Microsoft Excel file on OneDrive.", "input_schema": {"type": "object", "properties": {"sheet_name": {"type": "string", "description": "Worksheet name, e.g. Sheet1"}, "range_address": {"type": "string", "description": "Cell range, e.g. A1:D20"}, "file_id": {"type": "string", "description": "OneDrive file ID (optional, uses default)"}}, "required": ["sheet_name", "range_address"]}},
+    {"name": "excel_write_range", "description": "Write data to a range in a Microsoft Excel file on OneDrive.", "input_schema": {"type": "object", "properties": {"sheet_name": {"type": "string"}, "range_address": {"type": "string", "description": "Top-left cell, e.g. A1"}, "values": {"type": "array", "description": "2D array of values, e.g. [[row1col1, row1col2], [row2col1, row2col2]]"}, "file_id": {"type": "string"}}, "required": ["sheet_name", "range_address", "values"]}},
+    {"name": "sheets_read", "description": "Read data from a Google Sheets spreadsheet.", "input_schema": {"type": "object", "properties": {"range_notation": {"type": "string", "description": "Sheet range, e.g. Sheet1!A1:D20"}, "spreadsheet_id": {"type": "string", "description": "Google Spreadsheet ID (optional, uses default)"}}, "required": ["range_notation"]}},
+    {"name": "sheets_write", "description": "Write data to a Google Sheets spreadsheet.", "input_schema": {"type": "object", "properties": {"range_notation": {"type": "string", "description": "Sheet range, e.g. Sheet1!A1"}, "values": {"type": "array", "description": "2D array of values"}, "spreadsheet_id": {"type": "string"}}, "required": ["range_notation", "values"]}},
+    {"name": "exchange_get_calendar", "description": "Get upcoming calendar events from Microsoft Exchange / Outlook.", "input_schema": {"type": "object", "properties": {"days_ahead": {"type": "integer", "default": 7, "description": "How many days ahead to look"}}}},
+    {"name": "exchange_send_email", "description": "Send an email via Microsoft Exchange / Outlook.", "input_schema": {"type": "object", "properties": {"to": {"type": "string", "description": "Recipient email(s), comma-separated"}, "subject": {"type": "string"}, "body": {"type": "string"}}, "required": ["to", "subject", "body"]}},
 ]

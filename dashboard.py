@@ -1484,6 +1484,17 @@ OPERATIONS_HTML = """
             </div>
         </div>
 
+        <!-- Spreadsheets & Microsoft -->
+        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Spreadsheets & Microsoft</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">🟢 Excel / Exchange Token</span><input class="int-input" data-key="microsoft_graph_token" type="password" placeholder="Microsoft Graph access token"></div>
+                <div class="int-row"><span class="int-label">🟢 Excel File ID</span><input class="int-input" data-key="excel_file_id" type="text" placeholder="OneDrive file ID for default workbook"></div>
+                <div class="int-row"><span class="int-label">🔵 Google Sheets Token</span><input class="int-input" data-key="google_sheets_token" type="password" placeholder="Google OAuth2 access token"></div>
+                <div class="int-row"><span class="int-label">🔵 Spreadsheet ID</span><input class="int-input" data-key="google_spreadsheet_id" type="text" placeholder="Google Spreadsheet ID"></div>
+            </div>
+        </div>
+
         <!-- GTM API -->
         <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
             <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Sam Access Key</div>
@@ -2003,6 +2014,8 @@ def get_active_tools():
         "slack_api_key": ["slack_send_message"],
         "linear_api_key": ["linear_create_issue", "linear_get_issues"],
         "jira_api_key": ["jira_create_issue", "jira_get_issues"],
+        "microsoft_graph_token": ["excel_read_range", "excel_write_range", "exchange_get_calendar", "exchange_send_email"],
+        "google_sheets_token": ["sheets_read", "sheets_write"],
     }
     enabled_names = set()
     for setting_key, tool_names in key_map.items():
@@ -2609,10 +2622,15 @@ INTEGRATION_KEYS = [
     "notion_api_key", "notion_page_id", "slack_api_key",
     "linear_api_key", "linear_team_id",
     "jira_url", "jira_email", "jira_api_key",
+    "microsoft_graph_token", "excel_file_id",
+    "google_sheets_token", "google_spreadsheet_id",
 ]
 
 # Keys returned in full (not truncated to last 4 chars) — non-secret config values
-PLAIN_SETTING_KEYS = {"notion_page_id", "linear_team_id", "jira_url", "jira_email", "activecampaign_base_url"}
+PLAIN_SETTING_KEYS = {
+    "notion_page_id", "linear_team_id", "jira_url", "jira_email",
+    "activecampaign_base_url", "excel_file_id", "google_spreadsheet_id",
+}
 
 INTEGRATION_NAMES = {
     "hubspot_api_key": "HubSpot", "salesforce_api_key": "Salesforce",
@@ -2623,6 +2641,8 @@ INTEGRATION_NAMES = {
     "klaviyo_api_key": "Klaviyo", "notion_api_key": "Notion",
     "slack_api_key": "Slack", "linear_api_key": "Linear",
     "jira_api_key": "Jira",
+    "microsoft_graph_token": "Excel & Exchange (Microsoft)",
+    "google_sheets_token": "Google Sheets",
 }
 
 
