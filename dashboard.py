@@ -4,6 +4,7 @@ Runs the scheduler in a background thread and serves a modern interactive UI.
 """
 
 import json
+import os
 import re
 import threading
 import schedule
@@ -976,6 +977,7 @@ OPERATIONS_HTML = """
         </div>
     </div>
     <div class="nav-links">
+        <a href="/api-docs" class="nav-btn">🔑 API Docs</a>
         <a href="/" class="nav-btn">📧 Email Dashboard</a>
         <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
     </div>
@@ -1181,8 +1183,19 @@ def run_web_search(query: str) -> str:
         return f"Search error: {e}"
 
 
+def check_api_key():
+    """Returns True if request has a valid API key (or no key is configured)."""
+    api_key = os.environ.get("GTM_API_KEY", "")
+    if not api_key:
+        return True
+    provided = request.headers.get("X-API-Key", "") or request.json.get("api_key", "") if request.is_json else request.headers.get("X-API-Key", "")
+    return provided == api_key
+
+
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
+    if not check_api_key():
+        return jsonify({"error": "Invalid or missing API key"}), 401
     try:
         data = request.json
         message = data.get("message", "")
@@ -1198,10 +1211,242 @@ def gtm_chat():
             messages=messages,
         )
         reply = resp.content[0].text.strip()
-        return jsonify({"reply": reply})
+        return jsonify({"reply": reply, "agent": "sam-gtm", "status": "ok"})
     except Exception as e:
         print(f"GTM chat error: {e}")
-        return jsonify({"reply": f"Error: {e}"}), 500
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+API_DOCS_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volvere — API Docs</title>
+    <style>
+        :root { --bg:#0f0f13; --surface:#1a1a24; --surface2:#22222f; --border:#2e2e3e;
+                --accent:#059669; --accent2:#34d399; --text:#e8e8f0; --muted:#6b6b80; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+               background:var(--bg); color:var(--text); min-height:100vh; }
+        header { padding:20px 40px; display:flex; align-items:center; justify-content:space-between;
+                 border-bottom:1px solid var(--border); background:var(--surface); }
+        .logo { display:flex; align-items:center; gap:12px; }
+        .logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+                     border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+        .logo h1 { font-size:18px; font-weight:600; }
+        .logo span { font-size:12px; color:var(--muted); }
+        .nav-links { display:flex; gap:12px; }
+        .nav-btn { display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;
+                   border:1px solid var(--border); background:var(--surface2); color:var(--text);
+                   font-size:13px; font-weight:500; text-decoration:none; transition:border-color 0.2s; }
+        .nav-btn:hover { border-color:var(--accent2); }
+        .content { max-width:860px; margin:0 auto; padding:48px 40px; }
+        h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+        .subtitle { color:var(--muted); font-size:14px; margin-bottom:40px; }
+        .section { margin-bottom:40px; }
+        .section-title { font-size:16px; font-weight:600; margin-bottom:16px;
+                         padding-bottom:8px; border-bottom:1px solid var(--border); }
+        .endpoint { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+                    overflow:hidden; margin-bottom:20px; }
+        .endpoint-header { padding:14px 20px; display:flex; align-items:center; gap:12px;
+                           border-bottom:1px solid var(--border); }
+        .method { background:#059669; color:white; font-size:11px; font-weight:700;
+                  padding:3px 8px; border-radius:5px; letter-spacing:0.5px; }
+        .path { font-family:monospace; font-size:14px; }
+        .endpoint-body { padding:20px; }
+        .param-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .param-table th { text-align:left; color:var(--muted); font-weight:500; padding:6px 0;
+                          border-bottom:1px solid var(--border); }
+        .param-table td { padding:8px 0; border-bottom:1px solid var(--border); vertical-align:top; }
+        .param-table td:first-child { font-family:monospace; color:var(--accent2); width:140px; }
+        .param-table td:nth-child(2) { color:var(--muted); width:80px; }
+        .required { color:#f87171; font-size:10px; font-weight:600; }
+        .optional { color:var(--muted); font-size:10px; }
+        pre { background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+              padding:18px; overflow-x:auto; font-family:monospace; font-size:13px; line-height:1.6; margin-top:16px; }
+        .copy-btn { float:right; background:none; border:1px solid var(--border); border-radius:6px;
+                    padding:3px 10px; color:var(--muted); font-size:11px; cursor:pointer; margin-left:12px; }
+        .copy-btn:hover { border-color:var(--accent2); }
+        .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px;
+                 font-weight:600; margin-left:8px; }
+        .badge-green { background:#064e3b; color:#34d399; }
+        .badge-yellow { background:#422006; color:#fbbf24; }
+        .setup-card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+                      padding:24px; margin-bottom:16px; }
+        .setup-card h4 { font-size:14px; font-weight:600; margin-bottom:12px; }
+        .setup-step { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+        .step-num { width:24px; height:24px; border-radius:50%; background:var(--accent);
+                    display:flex; align-items:center; justify-content:center; font-size:12px;
+                    font-weight:700; flex-shrink:0; }
+        .step-text { font-size:13px; line-height:1.6; color:var(--muted); padding-top:2px; }
+        code { background:var(--surface2); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; color:var(--accent2); }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <div class="logo-icon">🔑</div>
+        <div>
+            <h1>API Documentation</h1>
+            <span>Integrate Sam into any automation</span>
+        </div>
+    </div>
+    <div class="nav-links">
+        <a href="/operations" class="nav-btn">⚙️ Operations</a>
+        <a href="/" class="nav-btn">📧 Dashboard</a>
+    </div>
+</header>
+
+<div class="content">
+    <h2>GTM Engineer API</h2>
+    <p class="subtitle">Call Sam programmatically from Zapier, Make, n8n, or any HTTP client.</p>
+
+    <div class="section">
+        <div class="section-title">Setup — Add your API Key</div>
+        <div class="setup-card">
+            <h4>1. Set the key in Railway</h4>
+            <div class="setup-step">
+                <div class="step-num">1</div>
+                <div class="step-text">Go to Railway → your project → <strong>Variables</strong></div>
+            </div>
+            <div class="setup-step">
+                <div class="step-num">2</div>
+                <div class="step-text">Add a new variable: <code>GTM_API_KEY</code> = any secret string you choose (e.g. <code>sk-gtm-your-secret-here</code>)</div>
+            </div>
+            <div class="setup-step">
+                <div class="step-num">3</div>
+                <div class="step-text">Railway will redeploy. From then on, all API calls must include this key in the <code>X-API-Key</code> header.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Endpoint</div>
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method">POST</span>
+                <span class="path">https://volvere-email-agent-production.up.railway.app/api/gtm</span>
+            </div>
+            <div class="endpoint-body">
+                <table class="param-table">
+                    <tr><th>Header</th><th>Type</th><th>Description</th></tr>
+                    <tr>
+                        <td>X-API-Key</td>
+                        <td><span class="required">required</span></td>
+                        <td>Your GTM_API_KEY value from Railway</td>
+                    </tr>
+                    <tr>
+                        <td>Content-Type</td>
+                        <td><span class="required">required</span></td>
+                        <td>Must be <code>application/json</code></td>
+                    </tr>
+                </table>
+                <br>
+                <table class="param-table">
+                    <tr><th>Body field</th><th>Type</th><th>Description</th></tr>
+                    <tr>
+                        <td>message</td>
+                        <td><span class="required">required</span></td>
+                        <td>The task for Sam (e.g. "Write a cold email sequence for fintech CFOs")</td>
+                    </tr>
+                    <tr>
+                        <td>history</td>
+                        <td><span class="optional">optional</span></td>
+                        <td>Array of prior messages for multi-turn conversations: <code>[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]</code></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Examples</div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method">cURL</span>
+                <span class="path">Basic request</span>
+            </div>
+            <div class="endpoint-body">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre id="curl-example">curl -X POST https://volvere-email-agent-production.up.railway.app/api/gtm \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_GTM_API_KEY" \\
+  -d '{"message": "Write a 3-email cold outreach sequence for e-commerce founders"}'</pre>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method">JSON</span>
+                <span class="path">Response format</span>
+            </div>
+            <div class="endpoint-body">
+                <pre>{
+  "reply": "## Cold Email Sequence: E-Commerce Founders\\n\\n...",
+  "agent": "sam-gtm",
+  "status": "ok"
+}</pre>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method">Python</span>
+                <span class="path">requests library</span>
+            </div>
+            <div class="endpoint-body">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre>import requests
+
+response = requests.post(
+    "https://volvere-email-agent-production.up.railway.app/api/gtm",
+    headers={
+        "X-API-Key": "YOUR_GTM_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={"message": "Build an ICP for a B2B SaaS targeting HR teams"}
+)
+
+print(response.json()["reply"])</pre>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method">Zapier</span>
+                <span class="path">Webhooks by Zapier — action setup</span>
+            </div>
+            <div class="endpoint-body">
+                <div class="setup-step"><div class="step-num">1</div><div class="step-text">Add a <strong>Webhooks by Zapier</strong> action → Method: <code>POST</code></div></div>
+                <div class="setup-step"><div class="step-num">2</div><div class="step-text">URL: <code>https://volvere-email-agent-production.up.railway.app/api/gtm</code></div></div>
+                <div class="setup-step"><div class="step-num">3</div><div class="step-text">Headers: <code>X-API-Key: YOUR_GTM_API_KEY</code> and <code>Content-Type: application/json</code></div></div>
+                <div class="setup-step"><div class="step-num">4</div><div class="step-text">Data: <code>{"message": "your task here or map from a previous step"}</code></div></div>
+                <div class="setup-step"><div class="step-num">5</div><div class="step-text">Sam's reply will be in the <code>reply</code> field of the response — map it to any next step.</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyCode(btn) {
+        const pre = btn.nextElementSibling;
+        navigator.clipboard.writeText(pre.textContent).then(() => {
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1500);
+        });
+    }
+</script>
+</body>
+</html>
+"""
+
+
+@app.route("/api-docs")
+def api_docs():
+    return render_template_string(API_DOCS_HTML)
 
 
 if __name__ == "__main__":
