@@ -917,6 +917,218 @@ RILEY_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"
   <circle cx="22" cy="27.5" r="1.4" fill="#0d9488" opacity="0.9"/>
 </svg>"""
 
+# ── MORGAN (Finance) ──────────────────────────────────────────────────────────
+MORGAN_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#1e1b4b"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#4338ca"/>
+  <rect x="13" y="23" width="10" height="5" fill="#3730a3"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8" ry="4.5" fill="#292524"/>
+  <rect x="10" y="8" width="2.5" height="5" rx="1.2" fill="#292524"/>
+  <rect x="23.5" y="8" width="2.5" height="5" rx="1.2" fill="#292524"/>
+  <rect x="11.5" y="13.5" width="5" height="3.5" rx="1.5" fill="none" stroke="#374151" stroke-width="0.9"/>
+  <rect x="19" y="13.5" width="5" height="3.5" rx="1.5" fill="none" stroke="#374151" stroke-width="0.9"/>
+  <line x1="16.5" y1="15.2" x2="19" y2="15.2" stroke="#374151" stroke-width="0.9"/>
+  <ellipse cx="14" cy="15.2" rx="1" ry="1.1" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15.2" rx="1" ry="1.1" fill="#1c1917"/>
+  <circle cx="14.3" cy="14.8" r="0.3" fill="white"/>
+  <circle cx="21.8" cy="14.8" r="0.3" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <polygon points="15,23 18,26 21,23" fill="white" opacity="0.9"/>
+</svg>"""
+
+MORGAN_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#1e1b4b"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#4338ca"/>
+  <rect x="16" y="28" width="12" height="6" fill="#3730a3"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10" ry="5.5" fill="#292524"/>
+  <rect x="12" y="10" width="3" height="6" rx="1.5" fill="#292524"/>
+  <rect x="29" y="10" width="3" height="6" rx="1.5" fill="#292524"/>
+  <rect x="13" y="16" width="6.5" height="4.5" rx="2" fill="none" stroke="#374151" stroke-width="1"/>
+  <rect x="24.5" y="16" width="6.5" height="4.5" rx="2" fill="none" stroke="#374151" stroke-width="1"/>
+  <line x1="19.5" y1="18.2" x2="24.5" y2="18.2" stroke="#374151" stroke-width="1"/>
+  <ellipse cx="16.3" cy="18.2" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="27.8" cy="18.2" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="16.8" cy="17.6" r="0.4" fill="white"/>
+  <circle cx="28.3" cy="17.6" r="0.4" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
+</svg>"""
+
+# ── CASEY (Accounting) ────────────────────────────────────────────────────────
+CASEY_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#27272a"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#52525b"/>
+  <rect x="13" y="23" width="10" height="5" fill="#3f3f46"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8.5" ry="5" fill="#d4a853"/>
+  <rect x="9" y="8" width="3" height="8" rx="1.5" fill="#d4a853"/>
+  <rect x="24" y="8" width="3" height="8" rx="1.5" fill="#d4a853"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <polygon points="15,23 18,26 21,23" fill="white" opacity="0.9"/>
+</svg>"""
+
+CASEY_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#27272a"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#52525b"/>
+  <rect x="16" y="28" width="12" height="6" fill="#3f3f46"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10.5" ry="6" fill="#d4a853"/>
+  <rect x="11" y="10" width="4" height="10" rx="2" fill="#d4a853"/>
+  <rect x="29" y="10" width="4" height="10" rx="2" fill="#d4a853"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <polygon points="18,28 22,32 26,28" fill="white" opacity="0.9"/>
+</svg>"""
+
+# ── QUINN (Economics) ─────────────────────────────────────────────────────────
+QUINN_AVATAR_SM = """<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect width="36" height="36" rx="10" fill="#4a1942"/>
+  <rect x="8" y="24" width="20" height="12" rx="4" fill="#9333ea"/>
+  <rect x="13" y="23" width="10" height="5" fill="#7e22ce"/>
+  <rect x="14" y="19" width="8" height="6" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="15" rx="8" ry="8.5" fill="#fcd5b0"/>
+  <ellipse cx="18" cy="8" rx="8.5" ry="5" fill="#7c2d12"/>
+  <rect x="9" y="8" width="3" height="7" rx="1.5" fill="#7c2d12"/>
+  <rect x="24" y="8" width="3" height="7" rx="1.5" fill="#7c2d12"/>
+  <ellipse cx="14.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <ellipse cx="21.5" cy="15" rx="1.3" ry="1.5" fill="#1c1917"/>
+  <circle cx="15" cy="14.4" r="0.4" fill="white"/>
+  <circle cx="22" cy="14.4" r="0.4" fill="white"/>
+  <ellipse cx="18" cy="17.5" rx="1" ry="0.6" fill="#e8b48a"/>
+  <path d="M15 19.5 Q18 21.5 21 19.5" stroke="#c08060" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <rect x="16" y="22.5" width="4" height="1" rx="0.5" fill="#e9d5ff" opacity="0.9"/>
+</svg>"""
+
+QUINN_AVATAR_LG = """<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <rect width="44" height="44" rx="12" fill="#4a1942"/>
+  <rect x="9" y="30" width="26" height="14" rx="5" fill="#9333ea"/>
+  <rect x="16" y="28" width="12" height="6" fill="#7e22ce"/>
+  <rect x="17" y="23" width="10" height="7" rx="2" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="18" rx="10" ry="10.5" fill="#fcd5b0"/>
+  <ellipse cx="22" cy="10" rx="10.5" ry="6" fill="#7c2d12"/>
+  <rect x="11" y="10" width="4" height="9" rx="2" fill="#7c2d12"/>
+  <rect x="29" y="10" width="4" height="9" rx="2" fill="#7c2d12"/>
+  <ellipse cx="17.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <ellipse cx="26.5" cy="18" rx="1.6" ry="1.8" fill="#1c1917"/>
+  <circle cx="18.1" cy="17.3" r="0.5" fill="white"/>
+  <circle cx="27.1" cy="17.3" r="0.5" fill="white"/>
+  <ellipse cx="22" cy="21" rx="1.2" ry="0.7" fill="#e8b48a"/>
+  <path d="M18.5 23.5 Q22 26 25.5 23.5" stroke="#c08060" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <rect x="19" y="27" width="6" height="1.2" rx="0.6" fill="#e9d5ff" opacity="0.9"/>
+</svg>"""
+
+FINANCE_SYSTEM_PROMPT = """You are Morgan, a Finance Strategist and fractional CFO. You are the "Planner" — you use financial data to make forward-looking decisions. You operate in executor mode only: you produce actual deliverables, not advice.
+
+You cover:
+CAPITAL & FUNDRAISING
+- Financial models (3-statement: P&L, balance sheet, cash flow) with assumptions
+- Investor-ready pitch deck financials section (projections, unit economics, use of funds)
+- Cap table modeling and dilution scenarios
+- Valuation using DCF, revenue multiples, and comparable companies
+
+CASH FLOW & RUNWAY
+- Runway calculations with scenario analysis (base/bull/bear)
+- Cash flow forecasting with monthly breakdowns
+- Burn rate analysis and optimization recommendations
+- Working capital management
+
+PLANNING & BUDGETS
+- Annual budgets and quarterly targets
+- Department-level budget breakdowns
+- Variance analysis (actual vs. budget)
+- KPI dashboards with financial metrics (CAC, LTV, gross margin, EBITDA)
+
+INVESTMENT & M&A
+- ROI and payback period analysis
+- Build vs. buy analysis
+- Term sheet interpretation and negotiation points
+
+Deliver the actual model, table, or analysis — with real numbers if given data, or clearly labeled assumptions if not. No filler."""
+
+ACCOUNTING_SYSTEM_PROMPT = """You are Casey, a Senior Accountant and bookkeeping specialist. You are the "Historian" — you keep the business legal, organized, and audit-ready. You operate in executor mode only: you produce actual deliverables, not advice.
+
+You cover:
+BOOKKEEPING & RECORDS
+- Chart of accounts setup (fully structured, with account codes)
+- Journal entries with correct debits and credits
+- Reconciliation templates and checklists
+- Month-end close checklists
+
+FINANCIAL STATEMENTS
+- Profit & Loss (Income Statement) — formatted and ready
+- Balance Sheet — assets, liabilities, equity fully structured
+- Cash Flow Statement (direct and indirect method)
+- Notes to financial statements
+
+TAX & COMPLIANCE
+- Tax planning strategies for the current structure (LLC, C-Corp, etc.)
+- Quarterly estimated tax schedules
+- Deductible expenses checklist by business type
+- Sales tax obligations by jurisdiction
+
+PAYROLL & AP/AR
+- Payroll journal entry templates
+- Accounts payable aging schedules
+- Accounts receivable follow-up workflows
+- Expense reimbursement policies
+
+SOFTWARE & SETUP
+- QuickBooks Online / Xero setup guides
+- Chart of accounts for specific industries (SaaS, ecommerce, services)
+- Automation rules for categorization
+
+Deliver the actual document, template, or entry — formatted and ready to use. No explanations without the actual output."""
+
+ECONOMICS_SYSTEM_PROMPT = """You are Quinn, an Economist and Market Strategist. You are the "Big Picture Thinker" — you analyze the environment a business operates in to drive pricing, positioning, and strategic decisions. You operate in executor mode only: you produce actual deliverables.
+
+You cover:
+MARKET ANALYSIS
+- Market sizing reports (TAM/SAM/SOM) with methodology
+- Supply and demand analysis for specific markets
+- Competitive landscape maps with positioning grids
+- Porter's Five Forces analysis (filled in, not templated)
+
+PRICING STRATEGY
+- Pricing model recommendations with elasticity analysis
+- Value-based pricing frameworks with anchoring strategy
+- Freemium vs. subscription vs. usage-based pricing comparisons
+- Price sensitivity analysis and willingness-to-pay estimates
+
+CONSUMER & BEHAVIORAL ECONOMICS
+- Customer decision-making analysis using behavioral frameworks
+- Incentive design for retention and referral programs
+- Loss aversion and anchoring tactics for conversion optimization
+
+MACRO & EXTERNAL FACTORS
+- Interest rate / inflation impact analysis on a specific business model
+- Regulatory environment mapping for a given industry
+- Competitor entry threat assessments
+- Economic scenario planning (recession, growth, disruption)
+
+UNIT ECONOMICS
+- CAC and LTV modeling with cohort analysis
+- Contribution margin and break-even analysis
+- Network effect and economies of scale modeling
+
+Deliver the actual analysis, model, or framework — with specific numbers, named competitors, and real market data where applicable."""
+
 PRODUCT_DEV_SYSTEM_PROMPT = """You are Riley, a Product Development Lead. You manage the full end-to-end product lifecycle — from raw idea to market launch and iteration. You operate in executor mode only — you produce actual deliverables, not theory.
 
 You cover every phase:
@@ -1339,6 +1551,32 @@ OPERATIONS_HTML = """
                 <div class="agent-tag">Product Development</div>
             </div>
         </div>
+
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
+
+        <div class="agent-btn" onclick="selectAgent('finance')">
+            <div class="agent-icon">{{ morgan_avatar_sm | safe }}</div>
+            <div>
+                <div class="agent-name">Morgan</div>
+                <div class="agent-tag">Finance Strategist</div>
+            </div>
+        </div>
+
+        <div class="agent-btn" onclick="selectAgent('accounting')">
+            <div class="agent-icon">{{ casey_avatar_sm | safe }}</div>
+            <div>
+                <div class="agent-name">Casey</div>
+                <div class="agent-tag">Accountant</div>
+            </div>
+        </div>
+
+        <div class="agent-btn" onclick="selectAgent('economics')">
+            <div class="agent-icon">{{ quinn_avatar_sm | safe }}</div>
+            <div>
+                <div class="agent-name">Quinn</div>
+                <div class="agent-tag">Economist</div>
+            </div>
+        </div>
     </div>
 
     <div class="chat-wrap">
@@ -1399,6 +1637,12 @@ OPERATIONS_HTML = """
     const JORDAN_SVG_LG = {{ jordan_avatar_lg | tojson }};
     const RILEY_SVG_SM = {{ riley_avatar_sm | tojson }};
     const RILEY_SVG_LG = {{ riley_avatar_lg | tojson }};
+    const MORGAN_SVG_SM = {{ morgan_avatar_sm | tojson }};
+    const MORGAN_SVG_LG = {{ morgan_avatar_lg | tojson }};
+    const CASEY_SVG_SM = {{ casey_avatar_sm | tojson }};
+    const CASEY_SVG_LG = {{ casey_avatar_lg | tojson }};
+    const QUINN_SVG_SM = {{ quinn_avatar_sm | tojson }};
+    const QUINN_SVG_LG = {{ quinn_avatar_lg | tojson }};
 
     const AGENTS = {
         gtm: {
@@ -1455,6 +1699,39 @@ OPERATIONS_HTML = """
             welcomeDesc: 'I own the full product lifecycle — from raw idea to market launch and beyond. Give me a concept, a problem, or a phase and I\'ll deliver the actual plan, doc, or framework.',
             suggestions: ['Build a full product roadmap for a B2B invoicing SaaS','Write user stories and acceptance criteria for a search feature','Create a go-to-market launch plan for a mobile app','Write a competitive analysis for an AI writing tool'],
             avatarSm: RILEY_SVG_SM, avatarLg: RILEY_SVG_LG,
+        },
+        finance: {
+            title: 'Morgan — Finance Strategist',
+            desc: 'Capital raising, runway, financial models, investor reporting',
+            placeholder: 'Ask Morgan for financial models, projections, or capital strategy…',
+            typing: 'Morgan is modeling…',
+            endpoint: '/api/finance',
+            welcomeTitle: "Hi, I'm Morgan — your Finance Strategist",
+            welcomeDesc: 'I build financial models, run fundraising scenarios, and plan your runway. Give me your numbers or assumptions and I\'ll deliver the actual model or analysis.',
+            suggestions: ['Build a 3-year financial model for a SaaS startup','Calculate our runway with 3 growth scenarios','Create an investor-ready unit economics breakdown','Write the financials section for a Series A pitch deck'],
+            avatarSm: MORGAN_SVG_SM, avatarLg: MORGAN_SVG_LG,
+        },
+        accounting: {
+            title: 'Casey — Accountant',
+            desc: 'Bookkeeping, financial statements, tax compliance, payroll',
+            placeholder: 'Ask Casey for journal entries, statements, or accounting setup…',
+            typing: 'Casey is reconciling…',
+            endpoint: '/api/accounting',
+            welcomeTitle: "Hi, I'm Casey — your Accountant",
+            welcomeDesc: 'I keep the books clean and the business compliant. Ask me for financial statements, journal entries, chart of accounts, tax schedules, or bookkeeping setup.',
+            suggestions: ['Set up a chart of accounts for a SaaS startup','Write the journal entries for a software subscription sale','Build a month-end close checklist','Create a P&L statement template for a service business'],
+            avatarSm: CASEY_SVG_SM, avatarLg: CASEY_SVG_LG,
+        },
+        economics: {
+            title: 'Quinn — Economist',
+            desc: 'Market analysis, pricing strategy, unit economics, macro factors',
+            placeholder: 'Ask Quinn for market analysis, pricing strategy, or unit economics…',
+            typing: 'Quinn is analyzing…',
+            endpoint: '/api/economics',
+            welcomeTitle: "Hi, I'm Quinn — your Economist",
+            welcomeDesc: 'I analyze markets, build pricing strategies, and model the big-picture forces affecting your business — from competitor dynamics to macro trends.',
+            suggestions: ['Analyze the market size for a B2B HR tech product','Build a pricing strategy for a SaaS product with three tiers','Run a Porter\'s Five Forces analysis for the e-commerce market','Calculate LTV and CAC targets for a 3x payback period'],
+            avatarSm: QUINN_SVG_SM, avatarLg: QUINN_SVG_LG,
         }
     };
 
@@ -1680,7 +1957,10 @@ def operations():
         maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG,
         alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG,
         jordan_avatar_sm=JORDAN_AVATAR_SM, jordan_avatar_lg=JORDAN_AVATAR_LG,
-        riley_avatar_sm=RILEY_AVATAR_SM, riley_avatar_lg=RILEY_AVATAR_LG)
+        riley_avatar_sm=RILEY_AVATAR_SM, riley_avatar_lg=RILEY_AVATAR_LG,
+        morgan_avatar_sm=MORGAN_AVATAR_SM, morgan_avatar_lg=MORGAN_AVATAR_LG,
+        casey_avatar_sm=CASEY_AVATAR_SM, casey_avatar_lg=CASEY_AVATAR_LG,
+        quinn_avatar_sm=QUINN_AVATAR_SM, quinn_avatar_lg=QUINN_AVATAR_LG)
 
 
 
@@ -1867,6 +2147,45 @@ def productdev_chat():
         return _run_agent(_build_system_prompt(PRODUCT_DEV_SYSTEM_PROMPT), messages, "riley-productdev", data.get("session_id", ""), text)
     except Exception as e:
         print(f"Product dev chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/finance", methods=["POST"])
+def finance_chat():
+    try:
+        data = request.json
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(FINANCE_SYSTEM_PROMPT), messages, "morgan-finance", data.get("session_id", ""), text)
+    except Exception as e:
+        print(f"Finance chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/accounting", methods=["POST"])
+def accounting_chat():
+    try:
+        data = request.json
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(ACCOUNTING_SYSTEM_PROMPT), messages, "casey-accounting", data.get("session_id", ""), text)
+    except Exception as e:
+        print(f"Accounting chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/economics", methods=["POST"])
+def economics_chat():
+    try:
+        data = request.json
+        text = data.get("message", "")
+        user_content = _build_user_message(text, data.get("attachment"))
+        messages = data.get("history", []) + [{"role": "user", "content": user_content}]
+        return _run_agent(_build_system_prompt(ECONOMICS_SYSTEM_PROMPT), messages, "quinn-economics", data.get("session_id", ""), text)
+    except Exception as e:
+        print(f"Economics chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
