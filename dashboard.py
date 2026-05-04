@@ -749,20 +749,30 @@ def meeting_chat():
     return jsonify(results)
 
 
-GTM_SYSTEM_PROMPT = """You are a Go-to-Market (GTM) Engineer — an elite operator who works at the intersection of strategy, technology, and execution.
+GTM_SYSTEM_PROMPT = """You are Sam, a Go-to-Market (GTM) Engineer. You are an EXECUTOR, not an advisor. You do the work, you do not tell people how to do it.
 
-Your expertise covers:
-- Building and managing GTM tech stacks: CRM systems (Salesforce, HubSpot), email automation, analytics platforms (Tableau, Mixpanel), and customer engagement tools
-- Data analysis: spotting trends, building dashboards, interpreting customer and market data to guide key decisions
-- Process optimization: simplifying workflows so sales, marketing, and customer success teams operate efficiently
-- Cross-functional alignment: bridging product, sales, marketing, and customer success teams
-- Experimentation: A/B testing, piloting new ideas, and iterating on what works
-- Technical skills: SQL, Python, API integrations, and automation
+When someone gives you a task, you produce the actual deliverable — ready to copy, paste, and use immediately. Never say "you should..." or "I recommend..." — just do it.
 
-Your philosophy: GTM Engineers reverse hyper-specialization. You connect the dots across sales, marketing, and operations — and execute on all of them. You replace up to 70% of what traditional SDR teams do by leveraging the right tech stack.
+What you actually produce:
+- Complete cold email sequences (subject lines, body, follow-ups) — ready to send
+- Full ICP (Ideal Customer Profile) documents with specific criteria, personas, and targeting
+- Prospect research on specific companies — real info, actionable intel
+- CRM pipeline stages, deal fields, and automation rules — written out precisely
+- LinkedIn outreach scripts — complete messages, not templates
+- Landing page copy — headline, subheadline, bullets, CTA — complete and ready
+- GTM playbooks — step-by-step execution plans with exact actions, tools, and timelines
+- Competitive analysis — what each competitor does, where the gap is, how to position against them
+- Sales scripts — full conversation flows with objection handling
+- Onboarding sequences — emails, tasks, milestones
 
-Be direct, practical, and execution-focused. Give concrete recommendations with specific tools, frameworks, and next steps. Write in plain prose — no markdown, no asterisks, no hashtags.
-Sign your responses as 'Sam — Your GTM Engineer'."""
+You use web_search to find real, current information about companies, markets, and competitors before producing any research deliverable.
+
+Rules:
+- Always produce the actual output, not instructions on how to create it
+- Be specific — name the tools, write the copy, set the numbers
+- Format deliverables clearly so they can be used immediately
+- If you need to research something, search first, then produce the deliverable with real data
+- Sign off as: Sam — GTM Engineer"""
 
 
 OPERATIONS_HTML = """
@@ -954,17 +964,17 @@ OPERATIONS_HTML = """
                 <h3>Hey, I'm Sam — your GTM Engineer</h3>
                 <p>I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
                 <div class="suggestions">
-                    <div class="suggestion" onclick="sendSuggestion(this)">How do I build a GTM tech stack from scratch?</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">What CRM should a seed-stage startup use?</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">How do I automate lead qualification?</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">What metrics should I track for GTM success?</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">Write me a 5-email cold outreach sequence for SaaS founders</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">Build me a full ICP for a B2B HR tech startup</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">Research HubSpot's pricing and positioning vs Salesforce</div>
+                    <div class="suggestion" onclick="sendSuggestion(this)">Write a LinkedIn outreach message for a VP of Sales</div>
                 </div>
             </div>
         </div>
 
         <div class="typing" id="typing">
             <span></span><span></span><span></span>
-            <span style="font-size:12px;color:var(--muted);margin-left:4px">Sam is thinking…</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span>
         </div>
 
         <div class="input-area">
@@ -1023,14 +1033,26 @@ OPERATIONS_HTML = """
         const msgs = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
+        const copyBtn = type === 'agent'
+            ? `<button onclick="copyText(this)" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
+            : '';
         div.innerHTML = `
             <div class="msg-avatar">${type === 'agent' ? '🚀' : '👤'}</div>
             <div>
                 <div class="msg-name">${name}</div>
                 <div class="msg-bubble">${escapeHtml(text)}</div>
+                ${copyBtn}
             </div>`;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function copyText(btn) {
+        const text = btn.previousElementSibling.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1500);
+        });
     }
 
     function escapeHtml(t) {
@@ -1056,6 +1078,33 @@ def operations():
     return render_template_string(OPERATIONS_HTML)
 
 
+GTM_TOOLS = [
+    {
+        "name": "web_search",
+        "description": "Search the web for real-time information about companies, markets, competitors, pricing, news, or any GTM-relevant data.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "The search query"}
+            },
+            "required": ["query"]
+        }
+    }
+]
+
+
+def run_web_search(query: str) -> str:
+    try:
+        from duckduckgo_search import DDGS
+        results = []
+        with DDGS() as ddgs:
+            for r in ddgs.text(query, max_results=5):
+                results.append(f"{r['title']}\n{r['href']}\n{r['body']}")
+        return "\n\n---\n\n".join(results) if results else "No results found."
+    except Exception as e:
+        return f"Search error: {e}"
+
+
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
     data = request.json
@@ -1063,15 +1112,32 @@ def gtm_chat():
     history = data.get("history", [])
 
     messages = history + [{"role": "user", "content": message}]
-
     client = anthropic.Anthropic()
-    resp = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=1024,
-        system=GTM_SYSTEM_PROMPT,
-        messages=messages,
-    )
-    return jsonify({"reply": resp.content[0].text.strip()})
+
+    while True:
+        resp = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=2048,
+            system=GTM_SYSTEM_PROMPT,
+            tools=GTM_TOOLS,
+            messages=messages,
+        )
+
+        if resp.stop_reason == "tool_use":
+            tool_results = []
+            for block in resp.content:
+                if block.type == "tool_use" and block.name == "web_search":
+                    search_result = run_web_search(block.input["query"])
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": search_result,
+                    })
+            messages.append({"role": "assistant", "content": resp.content})
+            messages.append({"role": "user", "content": tool_results})
+        else:
+            reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+            return jsonify({"reply": reply.strip()})
 
 
 if __name__ == "__main__":
