@@ -1082,7 +1082,7 @@ OPERATIONS_HTML = """
             history.push({ role: 'assistant', content: data.reply });
         } catch(e) {
             document.getElementById('typing').classList.remove('show');
-            addMessage('agent', 'Something went wrong. Please try again.', 'Sam');
+            addMessage('agent', 'Error: ' + e.message, 'Sam');
         }
     }
 
@@ -1164,37 +1164,42 @@ def run_web_search(query: str) -> str:
 
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
-    data = request.json
-    message = data.get("message", "")
-    history = data.get("history", [])
+    try:
+        data = request.json
+        message = data.get("message", "")
+        history = data.get("history", [])
 
-    messages = history + [{"role": "user", "content": message}]
-    client = anthropic.Anthropic()
+        messages = history + [{"role": "user", "content": message}]
+        client = anthropic.Anthropic()
 
-    while True:
-        resp = client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=2048,
-            system=GTM_SYSTEM_PROMPT,
-            tools=GTM_TOOLS,
-            messages=messages,
-        )
+        while True:
+            resp = client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=2048,
+                system=GTM_SYSTEM_PROMPT,
+                tools=GTM_TOOLS,
+                messages=messages,
+            )
 
-        if resp.stop_reason == "tool_use":
-            tool_results = []
-            for block in resp.content:
-                if block.type == "tool_use" and block.name == "web_search":
-                    search_result = run_web_search(block.input["query"])
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": search_result,
-                    })
-            messages.append({"role": "assistant", "content": resp.content})
-            messages.append({"role": "user", "content": tool_results})
-        else:
-            reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-            return jsonify({"reply": reply.strip()})
+            if resp.stop_reason == "tool_use":
+                assistant_content = [b.__dict__ if hasattr(b, '__dict__') else b for b in resp.content]
+                tool_results = []
+                for block in resp.content:
+                    if block.type == "tool_use" and block.name == "web_search":
+                        search_result = run_web_search(block.input["query"])
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": search_result,
+                        })
+                messages.append({"role": "assistant", "content": resp.content})
+                messages.append({"role": "user", "content": tool_results})
+            else:
+                reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+                return jsonify({"reply": reply.strip()})
+    except Exception as e:
+        print(f"GTM chat error: {e}")
+        return jsonify({"reply": f"Error: {e}"}), 500
 
 
 if __name__ == "__main__":
