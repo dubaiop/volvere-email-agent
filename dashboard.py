@@ -1646,175 +1646,108 @@ def get_active_tools():
     return [t for t in ALL_TOOLS if t["name"] in enabled_names]
 
 
+def _build_system_prompt(base_prompt):
+    """Append connected-tool context to any agent's base system prompt."""
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    if connected:
+        return (base_prompt +
+                f"\n\nYou have LIVE API access to these connected platforms: {', '.join(connected)}. "
+                "When a task can be executed directly (add a contact, send an email, track an event, create a deal), "
+                "use the available tools to do it — don't just describe it. Report what you actually did.")
+    return (base_prompt +
+            "\n\nNo external platforms are connected yet. Deliver complete, ready-to-use work. "
+            "Let the user know they can connect tools (HubSpot, Apollo, Mailchimp, etc.) via Settings to enable live execution.")
+
+
+def _run_agent(system_prompt, messages, agent_id):
+    """Shared tool-use loop for all agents."""
+    client = anthropic.Anthropic()
+    active_tools = get_active_tools()
+    tool_log = []
+
+    while True:
+        kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
+                      system=system_prompt, messages=messages)
+        if active_tools:
+            kwargs["tools"] = active_tools
+
+        resp = client.messages.create(**kwargs)
+
+        if resp.stop_reason == "tool_use":
+            tool_results = []
+            for block in resp.content:
+                if block.type == "tool_use":
+                    fn = TOOL_FUNCTIONS.get(block.name)
+                    result = fn(**block.input) if fn else f"Unknown tool: {block.name}"
+                    tool_log.append(f"[{block.name}] {result}")
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": str(result),
+                    })
+            messages.append({"role": "assistant", "content": resp.content})
+            messages.append({"role": "user", "content": tool_results})
+        else:
+            reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
+            if tool_log:
+                reply = "**Actions executed:**\n" + "\n".join(f"- {l}" for l in tool_log) + "\n\n" + reply
+            return jsonify({"reply": reply.strip(), "agent": agent_id, "status": "ok"})
+
+
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
     try:
         if not check_api_key():
             return jsonify({"error": "Invalid or missing API key"}), 401
         data = request.json
-        message = data.get("message", "")
-        history = data.get("history", [])
-
-        messages = history + [{"role": "user", "content": message}]
-        client = anthropic.Anthropic()
-        active_tools = get_active_tools()
-        tool_log = []
-
-        while True:
-            kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
-                         system=build_gtm_system_prompt(), messages=messages)
-            if active_tools:
-                kwargs["tools"] = active_tools
-
-            resp = client.messages.create(**kwargs)
-
-            if resp.stop_reason == "tool_use":
-                tool_results = []
-                for block in resp.content:
-                    if block.type == "tool_use":
-                        fn = TOOL_FUNCTIONS.get(block.name)
-                        if fn:
-                            result = fn(**block.input)
-                        else:
-                            result = f"Unknown tool: {block.name}"
-                        tool_log.append(f"[{block.name}] {result}")
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": result,
-                        })
-                messages.append({"role": "assistant", "content": resp.content})
-                messages.append({"role": "user", "content": tool_results})
-            else:
-                reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-                if tool_log:
-                    reply = "**Actions executed:**\n" + "\n".join(f"- {l}" for l in tool_log) + "\n\n" + reply
-                return jsonify({"reply": reply.strip(), "agent": "sam-gtm", "status": "ok"})
-
+        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
+        return _run_agent(_build_system_prompt(GTM_SYSTEM_PROMPT), messages, "sam-gtm")
     except Exception as e:
         print(f"GTM chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
-
-
-def build_productdev_system_prompt():
-    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
-    prompt = PRODUCT_DEV_SYSTEM_PROMPT
-    if connected:
-        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant."
-    return prompt
-
-
-@app.route("/api/productdev", methods=["POST"])
-def productdev_chat():
-    try:
-        data = request.json
-        message = data.get("message", "")
-        history = data.get("history", [])
-        messages = history + [{"role": "user", "content": message}]
-        client = anthropic.Anthropic()
-        resp = client.messages.create(
-            model=CLAUDE_MODEL, max_tokens=2048,
-            system=build_productdev_system_prompt(), messages=messages)
-        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-        return jsonify({"reply": reply.strip(), "agent": "riley-productdev", "status": "ok"})
-    except Exception as e:
-        print(f"Product dev chat error: {e}")
-        return jsonify({"error": str(e), "status": "error"}), 500
-
-
-def build_sales_system_prompt():
-    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
-    prompt = SALES_SYSTEM_PROMPT
-    if connected:
-        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant to execute work."
-    return prompt
-
-
-@app.route("/api/sales", methods=["POST"])
-def sales_chat():
-    try:
-        data = request.json
-        message = data.get("message", "")
-        history = data.get("history", [])
-        messages = history + [{"role": "user", "content": message}]
-        client = anthropic.Anthropic()
-        resp = client.messages.create(
-            model=CLAUDE_MODEL, max_tokens=2048,
-            system=build_sales_system_prompt(), messages=messages)
-        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-        return jsonify({"reply": reply.strip(), "agent": "jordan-sales", "status": "ok"})
-    except Exception as e:
-        print(f"Sales chat error: {e}")
-        return jsonify({"error": str(e), "status": "error"}), 500
-
-
-def build_product_system_prompt():
-    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
-    prompt = PRODUCT_SYSTEM_PROMPT
-    if connected:
-        prompt += f"\n\nYou have live access to: {', '.join(connected)}. Use tools where relevant."
-    return prompt
-
-
-@app.route("/api/product", methods=["POST"])
-def product_chat():
-    try:
-        data = request.json
-        message = data.get("message", "")
-        history = data.get("history", [])
-        messages = history + [{"role": "user", "content": message}]
-        client = anthropic.Anthropic()
-        resp = client.messages.create(
-            model=CLAUDE_MODEL, max_tokens=2048,
-            system=build_product_system_prompt(), messages=messages)
-        reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-        return jsonify({"reply": reply.strip(), "agent": "alex-product", "status": "ok"})
-    except Exception as e:
-        print(f"Product chat error: {e}")
-        return jsonify({"error": str(e), "status": "error"}), 500
-
-
-def build_marketing_system_prompt():
-    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
-    prompt = MARKETING_SYSTEM_PROMPT
-    if connected:
-        prompt += f"\n\nYou have LIVE API access to: {', '.join(connected)}. Use the tools to actually execute — don't just describe."
-    else:
-        prompt += "\n\nNo tools connected yet. Produce full, ready-to-use deliverables and let the user know they can connect tools via Settings."
-    return prompt
 
 
 @app.route("/api/marketing", methods=["POST"])
 def marketing_chat():
     try:
         data = request.json
-        message = data.get("message", "")
-        history = data.get("history", [])
-        messages = history + [{"role": "user", "content": message}]
-        client = anthropic.Anthropic()
-        active_tools = get_active_tools()
-
-        while True:
-            kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
-                         system=build_marketing_system_prompt(), messages=messages)
-            if active_tools:
-                kwargs["tools"] = active_tools
-            resp = client.messages.create(**kwargs)
-            if resp.stop_reason == "tool_use":
-                tool_results = []
-                for block in resp.content:
-                    if block.type == "tool_use":
-                        fn = TOOL_FUNCTIONS.get(block.name)
-                        result = fn(**block.input) if fn else f"Unknown tool: {block.name}"
-                        tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
-                messages.append({"role": "assistant", "content": resp.content})
-                messages.append({"role": "user", "content": tool_results})
-            else:
-                reply = next((b.text for b in resp.content if hasattr(b, "text")), "")
-                return jsonify({"reply": reply.strip(), "agent": "maya-marketing", "status": "ok"})
-
+        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
+        return _run_agent(_build_system_prompt(MARKETING_SYSTEM_PROMPT), messages, "maya-marketing")
     except Exception as e:
         print(f"Marketing chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/product", methods=["POST"])
+def product_chat():
+    try:
+        data = request.json
+        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
+        return _run_agent(_build_system_prompt(PRODUCT_SYSTEM_PROMPT), messages, "alex-product")
+    except Exception as e:
+        print(f"Product chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/sales", methods=["POST"])
+def sales_chat():
+    try:
+        data = request.json
+        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
+        return _run_agent(_build_system_prompt(SALES_SYSTEM_PROMPT), messages, "jordan-sales")
+    except Exception as e:
+        print(f"Sales chat error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+
+@app.route("/api/productdev", methods=["POST"])
+def productdev_chat():
+    try:
+        data = request.json
+        messages = data.get("history", []) + [{"role": "user", "content": data.get("message", "")}]
+        return _run_agent(_build_system_prompt(PRODUCT_DEV_SYSTEM_PROMPT), messages, "riley-productdev")
+    except Exception as e:
+        print(f"Product dev chat error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
 
 
