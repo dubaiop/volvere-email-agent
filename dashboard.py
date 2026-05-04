@@ -984,31 +984,79 @@ OPERATIONS_HTML = """
     </div>
 </header>
 
-<!-- Settings Modal -->
-<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;">
-    <div style="background:#1a1a24;border:1px solid #2e2e3e;border-radius:18px;width:480px;max-width:95vw;padding:28px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+<!-- Integrations Modal -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;">
+    <div style="background:#1a1a24;border:1px solid #2e2e3e;border-radius:18px;width:600px;max-width:95vw;padding:32px;margin:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
             <div>
-                <div style="font-size:17px;font-weight:600;">Settings</div>
-                <div style="font-size:12px;color:#6b6b80;margin-top:2px;">Configure your GTM API key</div>
+                <div style="font-size:18px;font-weight:700;">Integrations</div>
+                <div style="font-size:12px;color:#6b6b80;margin-top:3px;">Connect your tools — Sam will use these keys to do real work</div>
             </div>
-            <div onclick="closeSettings()" style="cursor:pointer;width:32px;height:32px;background:#22222f;border:1px solid #2e2e3e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b6b80;">✕</div>
+            <div onclick="closeSettings()" style="cursor:pointer;width:32px;height:32px;background:#22222f;border:1px solid #2e2e3e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b6b80;font-size:16px;">✕</div>
         </div>
 
-        <div style="margin-bottom:20px;">
-            <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px;">GTM API Key</label>
-            <div style="font-size:12px;color:#6b6b80;margin-bottom:10px;">Used to authenticate API calls to Sam from external tools. Leave blank to allow open access.</div>
-            <input id="api-key-input" type="password" placeholder="Enter your API key (e.g. sk-gtm-mysecret)"
-                style="width:100%;background:#22222f;border:1px solid #2e2e3e;border-radius:10px;padding:10px 14px;color:#e8e8f0;font-size:14px;outline:none;font-family:monospace;">
-            <div id="current-key-status" style="font-size:11px;color:#6b6b80;margin-top:6px;"></div>
+        <!-- CRM -->
+        <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">CRM</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">🟠 HubSpot</span><input class="int-input" data-key="hubspot_api_key" type="password" placeholder="HubSpot Private App Token"></div>
+                <div class="int-row"><span class="int-label">☁️ Salesforce</span><input class="int-input" data-key="salesforce_api_key" type="password" placeholder="Salesforce Access Token"></div>
+                <div class="int-row"><span class="int-label">🟣 Pipedrive</span><input class="int-input" data-key="pipedrive_api_key" type="password" placeholder="Pipedrive API Key"></div>
+            </div>
+        </div>
+
+        <!-- Email Automation -->
+        <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Email Automation</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">🦧 Apollo</span><input class="int-input" data-key="apollo_api_key" type="password" placeholder="Apollo.io API Key"></div>
+                <div class="int-row"><span class="int-label">⚡ Instantly</span><input class="int-input" data-key="instantly_api_key" type="password" placeholder="Instantly API Key"></div>
+                <div class="int-row"><span class="int-label">📧 Mailchimp</span><input class="int-input" data-key="mailchimp_api_key" type="password" placeholder="Mailchimp API Key"></div>
+                <div class="int-row"><span class="int-label">🔵 ActiveCampaign</span><input class="int-input" data-key="activecampaign_api_key" type="password" placeholder="ActiveCampaign API Key"></div>
+            </div>
+        </div>
+
+        <!-- Analytics -->
+        <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Analytics</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">📊 Mixpanel</span><input class="int-input" data-key="mixpanel_api_key" type="password" placeholder="Mixpanel Project Token"></div>
+                <div class="int-row"><span class="int-label">🟢 Segment</span><input class="int-input" data-key="segment_api_key" type="password" placeholder="Segment Write Key"></div>
+            </div>
+        </div>
+
+        <!-- Customer Engagement -->
+        <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Customer Engagement</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="int-row"><span class="int-label">💬 Intercom</span><input class="int-input" data-key="intercom_api_key" type="password" placeholder="Intercom Access Token"></div>
+                <div class="int-row"><span class="int-label">🎯 Klaviyo</span><input class="int-input" data-key="klaviyo_api_key" type="password" placeholder="Klaviyo Private API Key"></div>
+            </div>
+        </div>
+
+        <!-- GTM API -->
+        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Sam Access Key</div>
+            <div class="int-row"><span class="int-label">🔑 GTM API Key</span><input class="int-input" data-key="gtm_api_key" type="password" placeholder="Key to protect Sam's API endpoint"></div>
+            <div id="current-key-status" style="font-size:11px;color:#6b6b80;margin-top:6px;margin-left:140px;"></div>
         </div>
 
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="closeSettings()" style="background:none;border:1px solid #2e2e3e;border-radius:8px;padding:9px 18px;color:#6b6b80;font-size:13px;cursor:pointer;">Cancel</button>
-            <button onclick="saveApiKey()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;padding:9px 18px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Save Key</button>
+            <button onclick="closeSettings()" style="background:none;border:1px solid #2e2e3e;border-radius:8px;padding:10px 20px;color:#6b6b80;font-size:13px;cursor:pointer;">Cancel</button>
+            <button onclick="saveAllKeys()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;padding:10px 20px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Save All</button>
         </div>
     </div>
 </div>
+
+<style>
+.int-row { display:flex; align-items:center; gap:12px; }
+.int-label { font-size:13px; font-weight:500; min-width:128px; flex-shrink:0; }
+.int-input { flex:1; background:#22222f; border:1px solid #2e2e3e; border-radius:9px;
+             padding:9px 13px; color:#e8e8f0; font-size:13px; outline:none; font-family:monospace;
+             transition:border-color 0.2s; }
+.int-input:focus { border-color:#059669; }
+.int-input.saved { border-color:#34d399; }
+</style>
 
 <div class="page-wrap">
     <div class="sidebar">
@@ -1175,38 +1223,37 @@ OPERATIONS_HTML = """
 
     async function openSettings() {
         document.getElementById('settings-overlay').style.display = 'flex';
-        const res = await fetch('/api/settings/gtm-key');
+        const res = await fetch('/api/settings/all');
         const data = await res.json();
-        const status = document.getElementById('current-key-status');
-        if (data.has_key) {
-            status.textContent = 'Current key: ' + data.masked;
-            status.style.color = '#34d399';
-        } else {
-            status.textContent = 'No key set — API is open access';
-            status.style.color = '#6b6b80';
-        }
+        document.querySelectorAll('.int-input').forEach(inp => {
+            const k = inp.dataset.key;
+            if (data[k]) {
+                inp.placeholder = '••••••••' + data[k];
+                inp.classList.add('saved');
+            }
+        });
     }
 
     function closeSettings() {
         document.getElementById('settings-overlay').style.display = 'none';
-        document.getElementById('api-key-input').value = '';
+        document.querySelectorAll('.int-input').forEach(inp => inp.value = '');
     }
 
-    async function saveApiKey() {
-        const key = document.getElementById('api-key-input').value.trim();
-        if (!key) return;
-        const res = await fetch('/api/settings/gtm-key', {
+    async function saveAllKeys() {
+        const keys = {};
+        document.querySelectorAll('.int-input').forEach(inp => {
+            if (inp.value.trim()) keys[inp.dataset.key] = inp.value.trim();
+        });
+        if (!Object.keys(keys).length) { closeSettings(); return; }
+        await fetch('/api/settings/all', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key })
+            body: JSON.stringify(keys)
         });
-        const data = await res.json();
-        if (data.status === 'saved') {
-            closeSettings();
-            const btn = document.querySelector('button[onclick="openSettings()"]');
-            btn.textContent = '✓ Settings';
-            setTimeout(() => btn.textContent = '⚙️ Settings', 2000);
-        }
+        closeSettings();
+        const btn = document.querySelector('button[onclick="openSettings()"]');
+        btn.textContent = '✓ Saved';
+        setTimeout(() => btn.textContent = '⚙️ Settings', 2000);
     }
 
     document.getElementById('settings-overlay').addEventListener('click', e => {
@@ -1261,6 +1308,15 @@ def check_api_key():
     return provided == api_key
 
 
+def build_gtm_system_prompt():
+    connected = [name for key, name in INTEGRATION_NAMES.items() if get_setting(key)]
+    prompt = GTM_SYSTEM_PROMPT
+    if connected:
+        prompt += f"\n\nConnected tools (you have API access to these — reference them specifically in your deliverables): {', '.join(connected)}."
+        prompt += "\nWhen producing playbooks, sequences, or workflows, give exact steps using these specific tools."
+    return prompt
+
+
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
     if not check_api_key():
@@ -1276,7 +1332,7 @@ def gtm_chat():
         resp = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=2048,
-            system=GTM_SYSTEM_PROMPT,
+            system=build_gtm_system_prompt(),
             messages=messages,
         )
         reply = resp.content[0].text.strip()
@@ -1518,20 +1574,38 @@ def api_docs():
     return render_template_string(API_DOCS_HTML)
 
 
-@app.route("/api/settings/gtm-key", methods=["GET"])
-def get_gtm_key():
-    key = get_setting("gtm_api_key")
-    masked = ("*" * (len(key) - 4) + key[-4:]) if len(key) > 4 else ("*" * len(key))
-    return jsonify({"has_key": bool(key), "masked": masked if key else ""})
+INTEGRATION_KEYS = [
+    "gtm_api_key", "hubspot_api_key", "salesforce_api_key", "pipedrive_api_key",
+    "apollo_api_key", "instantly_api_key", "mailchimp_api_key", "activecampaign_api_key",
+    "mixpanel_api_key", "segment_api_key", "intercom_api_key", "klaviyo_api_key",
+]
+
+INTEGRATION_NAMES = {
+    "hubspot_api_key": "HubSpot", "salesforce_api_key": "Salesforce",
+    "pipedrive_api_key": "Pipedrive", "apollo_api_key": "Apollo",
+    "instantly_api_key": "Instantly", "mailchimp_api_key": "Mailchimp",
+    "activecampaign_api_key": "ActiveCampaign", "mixpanel_api_key": "Mixpanel",
+    "segment_api_key": "Segment", "intercom_api_key": "Intercom",
+    "klaviyo_api_key": "Klaviyo",
+}
 
 
-@app.route("/api/settings/gtm-key", methods=["POST"])
-def save_gtm_key():
+@app.route("/api/settings/all", methods=["GET"])
+def get_all_settings():
+    result = {}
+    for k in INTEGRATION_KEYS:
+        val = get_setting(k)
+        if val:
+            result[k] = val[-4:]
+    return jsonify(result)
+
+
+@app.route("/api/settings/all", methods=["POST"])
+def save_all_settings():
     data = request.json
-    key = data.get("key", "").strip()
-    if not key:
-        return jsonify({"error": "Key cannot be empty"}), 400
-    set_setting("gtm_api_key", key)
+    for k in INTEGRATION_KEYS:
+        if k in data and data[k].strip():
+            set_setting(k, data[k].strip())
     return jsonify({"status": "saved"})
 
 
