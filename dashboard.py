@@ -1416,7 +1416,7 @@ OPERATIONS_HTML = """
         <div class="logo-icon"><svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#vg2)"/><path d="M9 10 L18 25 L27 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
         <div>
             <h1>Operations Agents</h1>
-            <span>Specialized AI operators</span>
+            <span>Specialized AI operators · v2</span>
         </div>
     </div>
     <div class="nav-links">
