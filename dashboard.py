@@ -1313,7 +1313,8 @@ OPERATIONS_HTML = """
                          letter-spacing: 1px; text-transform: uppercase; padding: 0 8px 8px; }
         .agent-btn { display: flex; align-items: center; gap: 12px; padding: 12px;
                      border-radius: 10px; cursor: pointer; transition: background 0.15s;
-                     border: 1px solid transparent; }
+                     border: 1px solid transparent; width: 100%; text-align: left;
+                     background: none; color: inherit; font: inherit; outline: none; }
         .agent-btn:hover { background: var(--surface2); }
         .agent-btn.active { background: var(--surface2); border-color: var(--accent); }
         .agent-icon { width: 36px; height: 36px; border-radius: 10px; display: flex;
@@ -1526,71 +1527,71 @@ OPERATIONS_HTML = """
     <div class="sidebar">
         <div class="sidebar-title">Agents</div>
 
-        <div class="agent-btn active" data-agent="gtm">
-            <div class="agent-icon" style="pointer-events:none;">{{ sam_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn active" onclick="selectAgent('gtm')">
+            <div class="agent-icon">{{ sam_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Sam</div>
                 <div class="agent-tag">GTM Engineer</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="marketing">
-            <div class="agent-icon" style="pointer-events:none;">{{ maya_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('marketing')">
+            <div class="agent-icon">{{ maya_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Maya</div>
                 <div class="agent-tag">Marketing Strategist</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="product">
-            <div class="agent-icon" style="pointer-events:none;">{{ alex_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('product')">
+            <div class="agent-icon">{{ alex_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Alex</div>
                 <div class="agent-tag">Product Designer</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="sales">
-            <div class="agent-icon" style="pointer-events:none;">{{ jordan_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('sales')">
+            <div class="agent-icon">{{ jordan_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Jordan</div>
                 <div class="agent-tag">Sales Strategist</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="productdev">
-            <div class="agent-icon" style="pointer-events:none;">{{ riley_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('productdev')">
+            <div class="agent-icon">{{ riley_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Riley</div>
                 <div class="agent-tag">Product Development</div>
             </div>
-        </div>
+        </button>
 
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
 
-        <div class="agent-btn" data-agent="finance">
-            <div class="agent-icon" style="pointer-events:none;">{{ morgan_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('finance')">
+            <div class="agent-icon">{{ morgan_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Morgan</div>
                 <div class="agent-tag">Finance Strategist</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="accounting">
-            <div class="agent-icon" style="pointer-events:none;">{{ casey_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('accounting')">
+            <div class="agent-icon">{{ casey_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Casey</div>
                 <div class="agent-tag">Accountant</div>
             </div>
-        </div>
+        </button>
 
-        <div class="agent-btn" data-agent="economics">
-            <div class="agent-icon" style="pointer-events:none;">{{ quinn_avatar_sm | safe }}</div>
-            <div style="pointer-events:none;">
+        <button class="agent-btn" onclick="selectAgent('economics')">
+            <div class="agent-icon">{{ quinn_avatar_sm | safe }}</div>
+            <div>
                 <div class="agent-name">Quinn</div>
                 <div class="agent-tag">Economist</div>
             </div>
-        </div>
+        </button>
     </div>
 
     <div class="chat-wrap">
@@ -1832,11 +1833,6 @@ OPERATIONS_HTML = """
         loadAgentHistory(id);
     }
 
-    // Single delegated listener on the sidebar — catches clicks on any child
-    document.querySelector('.sidebar').addEventListener('click', function(e) {
-        const btn = e.target.closest('[data-agent]');
-        if (btn) selectAgent(btn.getAttribute('data-agent'));
-    });
 
     function sendSuggestion(el) {
         document.getElementById('msg-input').value = el.textContent || el.innerText;
