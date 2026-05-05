@@ -1645,12 +1645,10 @@ OPERATIONS_HTML = """
 </div>
 
 <script>
-    // Wire up sidebar agent buttons via event delegation (most reliable approach)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelector('.sidebar').addEventListener('click', function(e) {
-            var btn = e.target.closest('[data-agent]');
-            if (btn) window.selectAgent(btn.getAttribute('data-agent'));
-        });
+    // Wire up sidebar agent buttons — script is at bottom of body so DOM is ready
+    document.querySelector('.sidebar').addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-agent]');
+        if (btn) window.selectAgent(btn.getAttribute('data-agent'));
     });
 
     const SAM_SVG_SM = {{ sam_avatar_sm | tojson }};
