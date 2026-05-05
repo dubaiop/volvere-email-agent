@@ -1752,10 +1752,15 @@ OPERATIONS_HTML = """
     let currentAgent = 'gtm';
     let history = [];
     let currentAttachment = null;
-    let sessionId = localStorage.getItem('volvere_session');
-    if (!sessionId) {
-        sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
-        localStorage.setItem('volvere_session', sessionId);
+    let sessionId = '';
+    try {
+        sessionId = localStorage.getItem('volvere_session') || '';
+        if (!sessionId) {
+            sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+            localStorage.setItem('volvere_session', sessionId);
+        }
+    } catch(e) {
+        sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
     async function loadAgentHistory(agentId) {
@@ -1827,9 +1832,10 @@ OPERATIONS_HTML = """
         loadAgentHistory(id);
     }
 
-    // Wire sidebar buttons via event delegation
-    document.querySelectorAll('.agent-btn').forEach(btn => {
-        btn.addEventListener('click', () => selectAgent(btn.getAttribute('data-agent')));
+    // Single delegated listener on the sidebar — catches clicks on any child
+    document.querySelector('.sidebar').addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-agent]');
+        if (btn) selectAgent(btn.getAttribute('data-agent'));
     });
 
     function sendSuggestion(el) {
