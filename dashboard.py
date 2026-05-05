@@ -1308,19 +1308,22 @@ OPERATIONS_HTML = """
 
         /* Sidebar */
         .sidebar { width: 260px; border-right: 1px solid var(--border); background: var(--surface);
-                   padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+                   padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+                   overflow-y: auto; overflow-x: hidden; }
         .sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted);
                          letter-spacing: 1px; text-transform: uppercase; padding: 0 8px 8px; }
         .agent-btn { display: flex; align-items: center; gap: 12px; padding: 12px;
                      border-radius: 10px; cursor: pointer; transition: background 0.15s;
                      border: 1px solid transparent; width: 100%; text-align: left;
-                     background: none; color: inherit; font: inherit; outline: none; }
+                     background: none; color: inherit; font: inherit; outline: none;
+                     -webkit-tap-highlight-color: rgba(5,150,105,0.2); }
         .agent-btn:hover { background: var(--surface2); }
         .agent-btn.active { background: var(--surface2); border-color: var(--accent); }
+        .agent-btn * { pointer-events: none; }
         .agent-icon { width: 36px; height: 36px; border-radius: 10px; display: flex;
                       align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-                      overflow: hidden; }
-        .agent-icon img, .agent-icon svg { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+                      overflow: hidden; pointer-events: none; }
+        .agent-icon img, .agent-icon svg, .agent-icon svg * { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; pointer-events: none; }
         .agent-name { font-size: 14px; font-weight: 600; }
         .agent-tag { font-size: 11px; color: var(--muted); margin-top: 1px; }
         .coming-soon { opacity: 0.4; cursor: default; }
@@ -1527,7 +1530,7 @@ OPERATIONS_HTML = """
     <div class="sidebar">
         <div class="sidebar-title">Agents</div>
 
-        <button class="agent-btn active" onclick="selectAgent('gtm')">
+        <button class="agent-btn active" data-agent="gtm">
             <div class="agent-icon">{{ sam_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Sam</div>
@@ -1535,7 +1538,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('marketing')">
+        <button class="agent-btn" data-agent="marketing">
             <div class="agent-icon">{{ maya_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Maya</div>
@@ -1543,7 +1546,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('product')">
+        <button class="agent-btn" data-agent="product">
             <div class="agent-icon">{{ alex_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Alex</div>
@@ -1551,7 +1554,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('sales')">
+        <button class="agent-btn" data-agent="sales">
             <div class="agent-icon">{{ jordan_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Jordan</div>
@@ -1559,7 +1562,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('productdev')">
+        <button class="agent-btn" data-agent="productdev">
             <div class="agent-icon">{{ riley_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Riley</div>
@@ -1569,7 +1572,7 @@ OPERATIONS_HTML = """
 
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
 
-        <button class="agent-btn" onclick="selectAgent('finance')">
+        <button class="agent-btn" data-agent="finance">
             <div class="agent-icon">{{ morgan_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Morgan</div>
@@ -1577,7 +1580,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('accounting')">
+        <button class="agent-btn" data-agent="accounting">
             <div class="agent-icon">{{ casey_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Casey</div>
@@ -1585,7 +1588,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" onclick="selectAgent('economics')">
+        <button class="agent-btn" data-agent="economics">
             <div class="agent-icon">{{ quinn_avatar_sm | safe }}</div>
             <div>
                 <div class="agent-name">Quinn</div>
@@ -1642,6 +1645,14 @@ OPERATIONS_HTML = """
 </div>
 
 <script>
+    // Wire up sidebar agent buttons via event delegation (most reliable approach)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.sidebar').addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-agent]');
+            if (btn) window.selectAgent(btn.getAttribute('data-agent'));
+        });
+    });
+
     const SAM_SVG_SM = {{ sam_avatar_sm | tojson }};
     const SAM_SVG_LG = {{ sam_avatar_lg | tojson }};
     const MAYA_SVG_SM = {{ maya_avatar_sm | tojson }};
@@ -1781,16 +1792,15 @@ OPERATIONS_HTML = """
         } catch(e) { return false; }
     }
 
-    function selectAgent(id) {
-        document.getElementById('agent-header-name').textContent = 'CLICKED: ' + id;
+    window.selectAgent = function selectAgent(id) {
         if (id === currentAgent) return;
         currentAgent = id;
         history = [];
-        try { clearAttachment(); } catch(e) {};
+        try { clearAttachment(); } catch(e) {}
 
-        document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
-        const activeBtn = document.querySelector('[data-agent="' + id + '"]');
-        if (activeBtn) activeBtn.classList.add('active');
+        document.querySelectorAll('.agent-btn').forEach(function(b) {
+            b.classList.toggle('active', b.getAttribute('data-agent') === id);
+        });
 
         const a = AGENTS[id];
         if (!a) return;
