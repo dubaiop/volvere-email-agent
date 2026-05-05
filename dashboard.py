@@ -1782,10 +1782,11 @@ OPERATIONS_HTML = """
     }
 
     function selectAgent(id) {
+        document.getElementById('agent-header-name').textContent = 'CLICKED: ' + id;
         if (id === currentAgent) return;
         currentAgent = id;
         history = [];
-        clearAttachment();
+        try { clearAttachment(); } catch(e) {};
 
         document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
         const activeBtn = document.querySelector('[data-agent="' + id + '"]');
