@@ -5,6 +5,8 @@ Each agent has its own email and acts as a specific C-suite advisor.
 
 import os
 
+SCHEDULE_MINUTES = 10
+
 
 def clean_password(key: str) -> str:
     """Remove invisible/non-ASCII characters from passwords copied from browser."""
