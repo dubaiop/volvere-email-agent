@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
 from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history
 from integrations import ALL_TOOLS, TOOL_FUNCTIONS
-from config import CLIENTS, CLAUDE_MODEL
+from config import CLIENTS, CLAUDE_MODEL, SCHEDULE_MINUTES
 
 app = Flask(__name__)
 
@@ -22,7 +22,7 @@ app = Flask(__name__)
 def run_scheduler():
     from main import run
     run()
-    schedule.every(5).minutes.do(run)
+    schedule.every(SCHEDULE_MINUTES).minutes.do(run)
     while True:
         schedule.run_pending()
         time.sleep(30)
@@ -677,10 +677,108 @@ msgInput.addEventListener('keydown', e => {
 """
 
 
+LANDING_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volvere — AI Agent Hub</title>
+    <style>
+        :root {
+            --bg: #0f0f13; --surface: #1a1a24; --border: #2e2e3e;
+            --text: #e8e8f0; --muted: #9ca3af; --accent: #6c63ff; --accent2: #34d399;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #1d1b2c 0%, var(--bg) 50%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 20px 56px; }
+        .hero { text-align: center; margin-bottom: 30px; }
+        .hero h1 { font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.8px; margin-bottom: 10px; }
+        .hero p { color: var(--muted); font-size: 16px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 28px; }
+        .card {
+            background: linear-gradient(180deg, #1f1d2d 0%, var(--surface) 100%);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 220px;
+        }
+        .card h2 { font-size: 20px; }
+        .card p { color: var(--muted); line-height: 1.5; }
+        .tag {
+            display: inline-flex;
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(108, 99, 255, 0.18);
+            color: #c4baff;
+        }
+        .btn {
+            margin-top: auto;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="hero">
+            <h1>Volvere Agent Platform</h1>
+            <p>Choose an experience to get strategy, meeting feedback, or execution help from your AI agents.</p>
+        </section>
+
+        <section class="grid">
+            <article class="card">
+                <span class="tag">Feature 1</span>
+                <h2>Agent Advice</h2>
+                <p>Review advisor replies and email history from your executive AI agents in one dashboard.</p>
+                <a class="btn" href="/dashboard">Open Advice Dashboard</a>
+            </article>
+
+            <article class="card">
+                <span class="tag">Feature 2</span>
+                <h2>Meeting Agents</h2>
+                <p>Run a board-style meeting where all advisors respond in parallel with domain-specific input.</p>
+                <a class="btn" href="/meeting">Start Meeting Agents</a>
+            </article>
+
+            <article class="card">
+                <span class="tag">Feature 3</span>
+                <h2>Operations Agents</h2>
+                <p>Use execution-focused agents to run GTM, marketing, product, finance, and operations workflows.</p>
+                <a class="btn" href="/operations">Open Operations Agents</a>
+            </article>
+        </section>
+    </div>
+</body>
+</html>
+"""
+
+
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
+    return render_template_string(LANDING_HTML)
+
+
+@app.route("/dashboard")
+def email_dashboard():
     init_db()
     emails = get_all_emails()
     stats = get_stats()
@@ -1268,762 +1366,350 @@ You think in systems. You balance business goals with user needs. You reference 
 No filler. No "it depends." Deliver the actual design work."""
 
 
-OPERATIONS_HTML = """
-<!DOCTYPE html>
+OPERATIONS_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvere — Operations Agents</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        :root {
-            --bg: #0f0f13; --surface: #1a1a24; --surface2: #22222f;
-            --border: #2e2e3e; --accent: #059669; --accent2: #34d399;
-            --text: #e8e8f0; --muted: #6b6b80;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-               background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-
-        header { padding: 20px 40px; display: flex; align-items: center;
-                 justify-content: space-between; border-bottom: 1px solid var(--border);
-                 background: var(--surface); }
-        .logo { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 36px; height: 36px;
-                     background: linear-gradient(135deg, var(--accent), var(--accent2));
-                     border-radius: 10px; display: flex; align-items: center;
-                     justify-content: center; font-size: 18px; }
-        .logo h1 { font-size: 18px; font-weight: 600; }
-        .logo span { font-size: 12px; color: var(--muted); }
-        .nav-links { display: flex; gap: 12px; }
-        .nav-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px;
-                   border-radius: 8px; border: 1px solid var(--border); background: var(--surface2);
-                   color: var(--text); font-size: 13px; font-weight: 500; text-decoration: none;
-                   transition: border-color 0.2s; }
-        .nav-btn:hover { border-color: var(--accent2); }
-
-        .page-wrap { display: flex; flex: 1; overflow: hidden; }
-
-        /* Sidebar */
-        .sidebar { width: 260px; border-right: 1px solid var(--border); background: var(--surface);
-                   padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
-                   overflow-y: auto; overflow-x: hidden; }
-        .sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted);
-                         letter-spacing: 1px; text-transform: uppercase; padding: 0 8px 8px; }
-        .agent-btn { display: flex; align-items: center; gap: 12px; padding: 12px;
-                     border-radius: 10px; cursor: pointer; transition: background 0.15s;
-                     border: 1px solid transparent; width: 100%; text-align: left;
-                     background: none; color: inherit; font: inherit; outline: none;
-                     -webkit-tap-highlight-color: rgba(5,150,105,0.2); }
-        .agent-btn:hover { background: var(--surface2); }
-        .agent-btn.active { background: var(--surface2); border-color: var(--accent); }
-        .agent-btn * { pointer-events: none; }
-        .agent-icon { width: 36px; height: 36px; border-radius: 10px; display: flex;
-                      align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-                      overflow: hidden; pointer-events: none; }
-        .agent-icon img, .agent-icon svg, .agent-icon svg * { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; pointer-events: none; }
-        .agent-initial { width: 36px; height: 36px; border-radius: 10px; display: flex;
-                         align-items: center; justify-content: center; font-size: 15px;
-                         font-weight: 700; color: white; flex-shrink: 0; pointer-events: none; }
-        .agent-name { font-size: 14px; font-weight: 600; }
-        .agent-tag { font-size: 11px; color: var(--muted); margin-top: 1px; }
-        .coming-soon { opacity: 0.4; cursor: default; }
-        .coming-soon:hover { background: transparent; }
-        .cs-badge { font-size: 10px; background: var(--surface2); border: 1px solid var(--border);
-                    padding: 2px 6px; border-radius: 4px; color: var(--muted); margin-left: auto; }
-
-        /* Chat area */
-        .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .agent-header { padding: 20px 32px; border-bottom: 1px solid var(--border);
-                        background: var(--surface); display: flex; align-items: center; gap: 16px; }
-        .agent-header-icon { width: 44px; height: 44px; border-radius: 12px;
-                             background: linear-gradient(135deg, #059669, #34d399);
-                             display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .agent-header-info h2 { font-size: 17px; font-weight: 600; }
-        .agent-header-info p { font-size: 13px; color: var(--muted); margin-top: 2px; }
-        .online-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%;
-                      animation: pulse 2s infinite; margin-left: auto; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-        .messages { flex: 1; overflow-y: auto; padding: 24px 32px; display: flex;
-                    flex-direction: column; gap: 20px; }
-        .msg { display: flex; gap: 12px; max-width: 780px; }
-        .msg.user { flex-direction: row-reverse; align-self: flex-end; }
-        .msg-avatar { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-                      display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .msg.agent .msg-avatar { background: linear-gradient(135deg, #059669, #34d399); }
-        .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
-        .msg-bubble { background: var(--surface); border: 1px solid var(--border);
-                      border-radius: 14px; padding: 14px 18px; font-size: 14px;
-                      line-height: 1.65; white-space: pre-wrap; }
-        .msg.user .msg-bubble { background: var(--surface2); }
-        .msg-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-
-        .typing { display: none; align-items: center; gap: 6px; padding: 8px 32px; flex-shrink: 0; flex-direction: row; white-space: nowrap; }
-        .typing.show { display: flex; }
-        .typing-dots { display: flex; align-items: center; gap: 4px; }
-        .typing span.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2);
-                       animation: bounce 1.2s infinite; flex-shrink: 0; }
-        .typing span.dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing span.dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
-
-        .input-area { padding: 16px 32px 24px; border-top: 1px solid var(--border);
-                      background: var(--surface); }
-        .input-row { display: flex; gap: 10px; background: var(--surface2);
-                     border: 1px solid var(--border); border-radius: 12px; padding: 4px 4px 4px 16px;
-                     transition: border-color 0.2s; }
-        .input-row:focus-within { border-color: var(--accent); }
-        #msg-input { flex: 1; background: none; border: none; outline: none;
-                     color: var(--text); font-size: 14px; padding: 10px 0;
-                     font-family: inherit; resize: none; max-height: 120px; }
-        #msg-input::placeholder { color: var(--muted); }
-        .send-btn { background: linear-gradient(135deg, var(--accent), var(--accent2));
-                    border: none; border-radius: 9px; width: 38px; height: 38px;
-                    display: flex; align-items: center; justify-content: center;
-                    cursor: pointer; color: white; font-size: 16px; flex-shrink: 0;
-                    align-self: flex-end; margin-bottom: 2px; transition: opacity 0.2s; }
-        .send-btn:hover { opacity: 0.85; }
-
-        .welcome { text-align: center; padding: 60px 40px; color: var(--muted); }
-        .welcome-icon { font-size: 48px; margin-bottom: 16px; }
-        .welcome h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-        .welcome p { font-size: 14px; line-height: 1.6; max-width: 480px; margin: 0 auto; }
-        .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
-        .suggestion { background: var(--surface2); border: 1px solid var(--border);
-                      border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
-                      transition: border-color 0.2s; }
-        .suggestion:hover { border-color: var(--accent2); color: var(--text); }
-
-        /* Markdown rendering */
-        .msg-bubble h1,.msg-bubble h2,.msg-bubble h3 { font-size:14px; font-weight:700; margin:14px 0 6px; color:var(--accent2); }
-        .msg-bubble h1 { font-size:16px; }
-        .msg-bubble p { margin:6px 0; }
-        .msg-bubble ul,.msg-bubble ol { padding-left:20px; margin:6px 0; }
-        .msg-bubble li { margin:3px 0; }
-        .msg-bubble strong { color:var(--text); font-weight:600; }
-        .msg-bubble em { color:var(--accent2); font-style:italic; }
-        .msg-bubble hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
-        .msg-bubble blockquote { border-left:3px solid var(--accent); padding:4px 12px; margin:8px 0; color:var(--muted); font-style:italic; }
-        .msg-bubble code { background:var(--surface2); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; }
-        .msg-bubble pre { background:var(--surface2); padding:12px; border-radius:8px; overflow-x:auto; margin:8px 0; }
-        .msg-bubble pre code { background:none; padding:0; }
-        .msg-bubble a { color:var(--accent2); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volvere — Operations Agents</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M8 9 L16 23 L24 9' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root{--bg:#0f0f13;--surf:#1a1a24;--surf2:#22222f;--brd:#2e2e3e;--acc:#059669;--acc2:#34d399;--txt:#e8e8f0;--muted:#6b6b80}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column}
+header{padding:16px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd);background:var(--surf)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white}
+.logo h1{font-size:16px;font-weight:600}
+.logo span{font-size:11px;color:var(--muted)}
+.nav-links{display:flex;gap:10px}
+.nav-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--brd);background:var(--surf2);color:var(--txt);font-size:13px;text-decoration:none;cursor:pointer;font-family:inherit}
+.nav-btn:hover{border-color:var(--acc2)}
+.page{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;border-right:1px solid var(--brd);background:var(--surf);padding:20px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex-shrink:0}
+.sidebar-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding:4px 8px 8px}
+.team-sep{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:14px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:4px}
+.abtn{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent;width:100%;text-align:left;background:none;color:var(--txt);font-family:inherit;font-size:inherit}
+.abtn:hover{background:var(--surf2)}
+.abtn.on{background:var(--surf2);border-color:var(--acc)}
+.aico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:white;flex-shrink:0}
+.aname{font-size:13px;font-weight:600}
+.atag{font-size:11px;color:var(--muted);margin-top:1px}
+.chat{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-hdr{padding:16px 28px;border-bottom:1px solid var(--brd);background:var(--surf);display:flex;align-items:center;gap:14px}
+.chat-hdr-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white;flex-shrink:0}
+.chat-hdr h2{font-size:16px;font-weight:600}
+.chat-hdr p{font-size:12px;color:var(--muted);margin-top:2px}
+.online{width:7px;height:7px;background:var(--acc2);border-radius:50%;animation:pulse 2s infinite;margin-left:auto}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px}
+.msg{display:flex;gap:10px;max-width:760px}
+.msg.u{flex-direction:row-reverse;align-self:flex-end}
+.mavt{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:white}
+.msg.u .mavt{background:var(--surf2);border:1px solid var(--brd);font-size:16px}
+.mbub{background:var(--surf);border:1px solid var(--brd);border-radius:12px;padding:12px 16px;font-size:14px;line-height:1.65;white-space:pre-wrap}
+.msg.u .mbub{background:var(--surf2)}
+.mname{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:500}
+.typing{display:none;align-items:center;gap:6px;padding:6px 28px;flex-shrink:0}
+.typing.show{display:flex}
+.dots{display:flex;gap:4px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--acc2);animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.inp-area{padding:14px 28px 20px;border-top:1px solid var(--brd);background:var(--surf)}
+.inp-row{display:flex;gap:8px;background:var(--surf2);border:1px solid var(--brd);border-radius:12px;padding:4px 4px 4px 14px;transition:border-color .2s}
+.inp-row:focus-within{border-color:var(--acc)}
+#msg-input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:14px;padding:9px 0;font-family:inherit;resize:none;max-height:120px}
+#msg-input::placeholder{color:var(--muted)}
+.send-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:16px;flex-shrink:0;align-self:flex-end;margin-bottom:2px}
+.send-btn:hover{opacity:.85}
+.welcome{text-align:center;padding:60px 40px}
+.welcome h3{font-size:18px;font-weight:600;color:var(--txt);margin-bottom:8px}
+.welcome p{font-size:14px;line-height:1.6;color:var(--muted);max-width:460px;margin:0 auto}
+.suggs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+.sugg{background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--muted);transition:border-color .2s}
+.sugg:hover{border-color:var(--acc2);color:var(--txt)}
+.mbub h1,.mbub h2,.mbub h3{font-size:14px;font-weight:700;margin:12px 0 5px;color:var(--acc2)}
+.mbub h1{font-size:16px}.mbub p{margin:5px 0}.mbub ul,.mbub ol{padding-left:18px;margin:5px 0}
+.mbub li{margin:2px 0}.mbub strong{color:var(--txt);font-weight:600}.mbub em{color:var(--acc2)}
+.mbub code{background:var(--surf2);padding:1px 4px;border-radius:4px;font-family:monospace;font-size:12px}
+.mbub pre{background:var(--surf2);padding:10px;border-radius:8px;overflow-x:auto;margin:6px 0}
+.mbub pre code{background:none;padding:0}.mbub a{color:var(--acc2)}
+.mbub blockquote{border-left:3px solid var(--acc);padding:4px 12px;margin:6px 0;color:var(--muted);font-style:italic}
+.int-row{display:flex;align-items:center;gap:12px}
+.int-lbl{font-size:13px;font-weight:500;min-width:140px;flex-shrink:0}
+.int-inp{flex:1;background:#22222f;border:1px solid #2e2e3e;border-radius:9px;padding:9px 13px;color:#e8e8f0;font-size:13px;outline:none;font-family:monospace;transition:border-color .2s}
+.int-inp:focus{border-color:#059669}.int-inp.saved{border-color:#34d399}
+#settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px}
+</style>
 </head>
 <body>
 <header>
-    <div class="logo">
-        <div class="logo-icon"><svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#vg2)"/><path d="M9 10 L18 25 L27 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
-        <div>
-            <h1>Operations Agents</h1>
-            <span>Specialized AI operators · v2</span>
-        </div>
+  <div class="logo">
+    <div class="logo-icon">V</div>
+    <div>
+      <h1>Operations Agents</h1>
+      <span>Specialized AI operators</span>
     </div>
-    <div class="nav-links">
-        <button class="nav-btn" onclick="openSettings()" style="cursor:pointer;">⚙️ Settings</button>
-        <a href="/" class="nav-btn">📧 Email Dashboard</a>
-        <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
-    </div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="openSettings()">⚙️ Settings</button>
+    <a href="/" class="nav-btn">📧 Email Dashboard</a>
+    <a href="/meeting" class="nav-btn">🎙 Board Meeting</a>
+  </div>
 </header>
 
-<!-- Integrations Modal -->
-<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;">
-    <div style="background:#1a1a24;border:1px solid #2e2e3e;border-radius:18px;width:600px;max-width:95vw;padding:32px;margin:auto;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-            <div>
-                <div style="font-size:18px;font-weight:700;">Integrations</div>
-                <div style="font-size:12px;color:#6b6b80;margin-top:3px;">Connect your tools — Sam will use these keys to do real work</div>
-            </div>
-            <div onclick="closeSettings()" style="cursor:pointer;width:32px;height:32px;background:#22222f;border:1px solid #2e2e3e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b6b80;font-size:16px;">✕</div>
-        </div>
-
-        <!-- CRM -->
-        <div style="margin-bottom:28px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">CRM</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">🟠 HubSpot</span><input class="int-input" data-key="hubspot_api_key" type="password" placeholder="HubSpot Private App Token"></div>
-                <div class="int-row"><span class="int-label">☁️ Salesforce</span><input class="int-input" data-key="salesforce_api_key" type="password" placeholder="Salesforce Access Token"></div>
-                <div class="int-row"><span class="int-label">🟣 Pipedrive</span><input class="int-input" data-key="pipedrive_api_key" type="password" placeholder="Pipedrive API Key"></div>
-            </div>
-        </div>
-
-        <!-- Email Automation -->
-        <div style="margin-bottom:28px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Email Automation</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">🦧 Apollo</span><input class="int-input" data-key="apollo_api_key" type="password" placeholder="Apollo.io API Key"></div>
-                <div class="int-row"><span class="int-label">⚡ Instantly</span><input class="int-input" data-key="instantly_api_key" type="password" placeholder="Instantly API Key"></div>
-                <div class="int-row"><span class="int-label">📧 Mailchimp</span><input class="int-input" data-key="mailchimp_api_key" type="password" placeholder="Mailchimp API Key"></div>
-                <div class="int-row"><span class="int-label">🔵 ActiveCampaign</span><input class="int-input" data-key="activecampaign_api_key" type="password" placeholder="ActiveCampaign API Key"></div>
-            </div>
-        </div>
-
-        <!-- Analytics -->
-        <div style="margin-bottom:28px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Analytics</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">📊 Mixpanel</span><input class="int-input" data-key="mixpanel_api_key" type="password" placeholder="Mixpanel Project Token"></div>
-                <div class="int-row"><span class="int-label">🟢 Segment</span><input class="int-input" data-key="segment_api_key" type="password" placeholder="Segment Write Key"></div>
-            </div>
-        </div>
-
-        <!-- Customer Engagement -->
-        <div style="margin-bottom:28px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Customer Engagement</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">💬 Intercom</span><input class="int-input" data-key="intercom_api_key" type="password" placeholder="Intercom Access Token"></div>
-                <div class="int-row"><span class="int-label">🎯 Klaviyo</span><input class="int-input" data-key="klaviyo_api_key" type="password" placeholder="Klaviyo Private API Key"></div>
-            </div>
-        </div>
-
-        <!-- Project Management -->
-        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Project Management</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">📝 Notion Token</span><input class="int-input" data-key="notion_api_key" type="password" placeholder="Notion Integration Secret"></div>
-                <div class="int-row"><span class="int-label">📝 Notion Page ID</span><input class="int-input" data-key="notion_page_id" type="text" placeholder="Parent page or database ID"></div>
-                <div class="int-row"><span class="int-label">💬 Slack Token</span><input class="int-input" data-key="slack_api_key" type="password" placeholder="Slack Bot Token (xoxb-...)"></div>
-                <div class="int-row"><span class="int-label">🔷 Linear API Key</span><input class="int-input" data-key="linear_api_key" type="password" placeholder="Linear API Key"></div>
-                <div class="int-row"><span class="int-label">🔷 Linear Team ID</span><input class="int-input" data-key="linear_team_id" type="text" placeholder="Linear Team ID"></div>
-                <div class="int-row"><span class="int-label">🟦 Jira URL</span><input class="int-input" data-key="jira_url" type="text" placeholder="https://your-company.atlassian.net"></div>
-                <div class="int-row"><span class="int-label">🟦 Jira Email</span><input class="int-input" data-key="jira_email" type="text" placeholder="you@company.com"></div>
-                <div class="int-row"><span class="int-label">🟦 Jira API Token</span><input class="int-input" data-key="jira_api_key" type="password" placeholder="Jira API Token"></div>
-            </div>
-        </div>
-
-        <!-- Spreadsheets & Microsoft -->
-        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Spreadsheets & Microsoft</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="int-row"><span class="int-label">🟢 Excel / Exchange Token</span><input class="int-input" data-key="microsoft_graph_token" type="password" placeholder="Microsoft Graph access token"></div>
-                <div class="int-row"><span class="int-label">🟢 Excel File ID</span><input class="int-input" data-key="excel_file_id" type="text" placeholder="OneDrive file ID for default workbook"></div>
-                <div class="int-row"><span class="int-label">🔵 Google Sheets Token</span><input class="int-input" data-key="google_sheets_token" type="password" placeholder="Google OAuth2 access token"></div>
-                <div class="int-row"><span class="int-label">🔵 Spreadsheet ID</span><input class="int-input" data-key="google_spreadsheet_id" type="text" placeholder="Google Spreadsheet ID"></div>
-            </div>
-        </div>
-
-        <!-- GTM API -->
-        <div style="margin-bottom:28px;padding-top:20px;border-top:1px solid #2e2e3e;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b6b80;margin-bottom:14px;">Sam Access Key</div>
-            <div class="int-row"><span class="int-label">🔑 GTM API Key</span><input class="int-input" data-key="gtm_api_key" type="password" placeholder="Key to protect Sam's API endpoint"></div>
-            <div id="current-key-status" style="font-size:11px;color:#6b6b80;margin-top:6px;margin-left:140px;"></div>
-        </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="closeSettings()" style="background:none;border:1px solid #2e2e3e;border-radius:8px;padding:10px 20px;color:#6b6b80;font-size:13px;cursor:pointer;">Cancel</button>
-            <button onclick="saveAllKeys()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;padding:10px 20px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Save All</button>
-        </div>
+<!-- Settings modal -->
+<div id="settings-overlay">
+  <div style="background:#1a1a24;border:1px solid #2e2e3e;border-radius:18px;width:600px;max-width:95vw;padding:32px;margin:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div><div style="font-size:18px;font-weight:700;">Integrations</div><div style="font-size:12px;color:#6b6b80;margin-top:3px;">Connect tools — agents will use these to do real work</div></div>
+      <button onclick="closeSettings()" style="background:#22222f;border:1px solid #2e2e3e;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#6b6b80;font-size:16px;">✕</button>
     </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="int-row"><span class="int-lbl">🟠 HubSpot</span><input class="int-inp" data-key="hubspot_api_key" type="password" placeholder="HubSpot Private App Token"></div>
+      <div class="int-row"><span class="int-lbl">🟣 Pipedrive</span><input class="int-inp" data-key="pipedrive_api_key" type="password" placeholder="Pipedrive API Key"></div>
+      <div class="int-row"><span class="int-lbl">🦧 Apollo</span><input class="int-inp" data-key="apollo_api_key" type="password" placeholder="Apollo.io API Key"></div>
+      <div class="int-row"><span class="int-lbl">⚡ Instantly</span><input class="int-inp" data-key="instantly_api_key" type="password" placeholder="Instantly API Key"></div>
+      <div class="int-row"><span class="int-lbl">📧 Mailchimp</span><input class="int-inp" data-key="mailchimp_api_key" type="password" placeholder="Mailchimp API Key"></div>
+      <div class="int-row"><span class="int-lbl">💬 Slack</span><input class="int-inp" data-key="slack_api_key" type="password" placeholder="Slack Bot Token (xoxb-)"></div>
+      <div class="int-row"><span class="int-lbl">📝 Notion</span><input class="int-inp" data-key="notion_api_key" type="password" placeholder="Notion Integration Secret"></div>
+      <div class="int-row"><span class="int-lbl">📊 Mixpanel</span><input class="int-inp" data-key="mixpanel_api_key" type="password" placeholder="Mixpanel Project Token"></div>
+      <div class="int-row"><span class="int-lbl">🟢 Segment</span><input class="int-inp" data-key="segment_api_key" type="password" placeholder="Segment Write Key"></div>
+      <div class="int-row"><span class="int-lbl">🔷 Linear</span><input class="int-inp" data-key="linear_api_key" type="password" placeholder="Linear API Key"></div>
+      <div class="int-row"><span class="int-lbl">🟦 Jira Token</span><input class="int-inp" data-key="jira_api_key" type="password" placeholder="Jira API Token"></div>
+      <div class="int-row"><span class="int-lbl">📗 Excel/Exchange</span><input class="int-inp" data-key="microsoft_graph_token" type="password" placeholder="Microsoft Graph access token"></div>
+      <div class="int-row"><span class="int-lbl">📊 Google Sheets</span><input class="int-inp" data-key="google_sheets_token" type="password" placeholder="Google OAuth2 access token"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+      <button onclick="closeSettings()" style="background:none;border:1px solid #2e2e3e;border-radius:8px;padding:10px 20px;color:#6b6b80;font-size:13px;cursor:pointer;">Cancel</button>
+      <button onclick="saveAllKeys()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;padding:10px 20px;color:white;font-size:13px;font-weight:600;cursor:pointer;">Save All</button>
+    </div>
+  </div>
 </div>
 
-<style>
-.int-row { display:flex; align-items:center; gap:12px; }
-.int-label { font-size:13px; font-weight:500; min-width:128px; flex-shrink:0; }
-.int-input { flex:1; background:#22222f; border:1px solid #2e2e3e; border-radius:9px;
-             padding:9px 13px; color:#e8e8f0; font-size:13px; outline:none; font-family:monospace;
-             transition:border-color 0.2s; }
-.int-input:focus { border-color:#059669; }
-.int-input.saved { border-color:#34d399; }
-</style>
+<div class="page">
+  <div class="sidebar">
+    <div class="sidebar-label">Agents</div>
+    <button class="abtn on" id="btn-gtm" onclick="go('gtm')"><div class="aico" style="background:linear-gradient(135deg,#059669,#34d399)">S</div><div><div class="aname">Sam</div><div class="atag">GTM Engineer</div></div></button>
+    <button class="abtn" id="btn-marketing" onclick="go('marketing')"><div class="aico" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">M</div><div><div class="aname">Maya</div><div class="atag">Marketing Strategist</div></div></button>
+    <button class="abtn" id="btn-product" onclick="go('product')"><div class="aico" style="background:linear-gradient(135deg,#0284c7,#38bdf8)">A</div><div><div class="aname">Alex</div><div class="atag">Product Designer</div></div></button>
+    <button class="abtn" id="btn-sales" onclick="go('sales')"><div class="aico" style="background:linear-gradient(135deg,#b45309,#fbbf24)">J</div><div><div class="aname">Jordan</div><div class="atag">Sales Strategist</div></div></button>
+    <button class="abtn" id="btn-productdev" onclick="go('productdev')"><div class="aico" style="background:linear-gradient(135deg,#be185d,#fb7185)">R</div><div><div class="aname">Riley</div><div class="atag">Product Dev</div></div></button>
+    <div class="team-sep">Economics Team</div>
+    <button class="abtn" id="btn-finance" onclick="go('finance')"><div class="aico" style="background:linear-gradient(135deg,#065f46,#34d399)">M</div><div><div class="aname">Morgan</div><div class="atag">Finance Strategist</div></div></button>
+    <button class="abtn" id="btn-accounting" onclick="go('accounting')"><div class="aico" style="background:linear-gradient(135deg,#1e3a5f,#60a5fa)">C</div><div><div class="aname">Casey</div><div class="atag">Accountant</div></div></button>
+    <button class="abtn" id="btn-economics" onclick="go('economics')"><div class="aico" style="background:linear-gradient(135deg,#7f1d1d,#f87171)">Q</div><div><div class="aname">Quinn</div><div class="atag">Economist</div></div></button>
+  </div>
 
-<div class="page-wrap">
-    <div class="sidebar">
-        <div class="sidebar-title">Agents</div>
-
-        <button class="agent-btn active" data-agent="gtm" onclick="selectAgent('gtm')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#059669,#34d399);">S</div>
-            <div>
-                <div class="agent-name">Sam</div>
-                <div class="agent-tag">GTM Engineer</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="marketing" onclick="selectAgent('marketing')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">M</div>
-            <div>
-                <div class="agent-name">Maya</div>
-                <div class="agent-tag">Marketing Strategist</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="product" onclick="selectAgent('product')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#0284c7,#38bdf8);">A</div>
-            <div>
-                <div class="agent-name">Alex</div>
-                <div class="agent-tag">Product Designer</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="sales" onclick="selectAgent('sales')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#b45309,#fbbf24);">J</div>
-            <div>
-                <div class="agent-name">Jordan</div>
-                <div class="agent-tag">Sales Strategist</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="productdev" onclick="selectAgent('productdev')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#be185d,#fb7185);">R</div>
-            <div>
-                <div class="agent-name">Riley</div>
-                <div class="agent-tag">Product Development</div>
-            </div>
-        </button>
-
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
-
-        <button class="agent-btn" data-agent="finance" onclick="selectAgent('finance')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#065f46,#34d399);">M</div>
-            <div>
-                <div class="agent-name">Morgan</div>
-                <div class="agent-tag">Finance Strategist</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="accounting" onclick="selectAgent('accounting')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#1e3a5f,#60a5fa);">C</div>
-            <div>
-                <div class="agent-name">Casey</div>
-                <div class="agent-tag">Accountant</div>
-            </div>
-        </button>
-
-        <button class="agent-btn" data-agent="economics" onclick="selectAgent('economics')">
-            <div class="agent-initial" style="background:linear-gradient(135deg,#7f1d1d,#f87171);">Q</div>
-            <div>
-                <div class="agent-name">Quinn</div>
-                <div class="agent-tag">Economist</div>
-            </div>
-        </button>
+  <div class="chat">
+    <div class="chat-hdr">
+      <div class="chat-hdr-ico" id="hdr-ico" style="background:linear-gradient(135deg,#059669,#34d399)">S</div>
+      <div>
+        <h2 id="hdr-name">Sam — GTM Engineer</h2>
+        <p id="hdr-desc">Go-to-Market strategy, tech stack, sales ops, growth execution</p>
+      </div>
+      <div class="online"></div>
     </div>
-
-    <div class="chat-wrap">
-        <div class="agent-header">
-            <div id="agent-header-icon" class="agent-header-icon" style="background:none;padding:0;overflow:hidden;">{{ sam_avatar_lg | safe }}</div>
-            <div class="agent-header-info">
-                <h2 id="agent-header-name">Sam — GTM Engineer</h2>
-                <p id="agent-header-desc">Go-to-Market strategy, tech stack, sales ops, growth execution</p>
-            </div>
-            <div class="online-dot"></div>
-        </div>
-
-        <div class="messages" id="messages">
-            <div class="welcome" id="welcome">
-                <div class="welcome-icon" style="display:flex;justify-content:center;"><div id="welcome-icon" style="width:72px;height:72px;border-radius:18px;overflow:hidden;">{{ sam_avatar_lg | safe }}</div></div>
-                <h3 id="welcome-title">Hey, I'm Sam — your GTM Engineer</h3>
-                <p id="welcome-desc">I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
-                <div class="suggestions" id="suggestions">
-                    <div class="suggestion" onclick="sendSuggestion(this)">Write me a 5-email cold outreach sequence for SaaS founders</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">Build me a full ICP for a B2B HR tech startup</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">Research HubSpot's pricing and positioning vs Salesforce</div>
-                    <div class="suggestion" onclick="sendSuggestion(this)">Write a LinkedIn outreach message for a VP of Sales</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="typing" id="typing">
-            <div class="typing-dots">
-                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            </div>
-            <span id="typing-text" style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span>
-        </div>
-
-        <div class="input-area">
-            <div id="attachment-chip" style="display:none;align-items:center;gap:8px;padding:6px 12px;background:#1a1a2e;border:1px solid #2e2e3e;border-radius:8px;margin-bottom:8px;font-size:12px;color:var(--muted);">
-                <span>📎</span>
-                <span id="attachment-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-                <button onclick="clearAttachment()" style="background:none;border:none;color:#6b6b80;cursor:pointer;font-size:16px;line-height:1;">×</button>
-            </div>
-            <div class="input-row">
-                <input type="file" id="file-input" accept=".txt,.md,.csv,.json,.pdf,.png,.jpg,.jpeg,.gif,.webp,.docx" style="display:none">
-                <button onclick="document.getElementById('file-input').click()" style="background:none;border:1px solid #2e2e3e;border-radius:9px;padding:8px 10px;color:#6b6b80;cursor:pointer;font-size:16px;flex-shrink:0;" title="Attach file">📎</button>
-                <textarea id="msg-input" placeholder="Ask Sam anything about GTM strategy, tools, or execution…" rows="1"></textarea>
-                <button class="send-btn" onclick="sendMessage()">↑</button>
-            </div>
-        </div>
+    <div class="msgs" id="msgs">
+      <div class="welcome" id="welcome">
+        <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:white;margin:0 auto 16px" id="welcome-ico">S</div>
+        <h3 id="welcome-title">Hey, I'm Sam — your GTM Engineer</h3>
+        <p id="welcome-desc">I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.</p>
+        <div class="suggs" id="suggs"></div>
+      </div>
     </div>
+    <div class="typing" id="typing"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span id="typing-txt" style="font-size:12px;color:var(--muted);margin-left:4px">Sam is working on it…</span></div>
+    <div class="inp-area">
+      <div class="inp-row">
+        <textarea id="msg-input" rows="1" placeholder="Ask Sam anything about GTM strategy, tools, or execution…"></textarea>
+        <button class="send-btn" onclick="sendMsg()">↑</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-    const SAM_SVG_SM = {{ sam_avatar_sm | tojson }};
-    const SAM_SVG_LG = {{ sam_avatar_lg | tojson }};
-    const MAYA_SVG_SM = {{ maya_avatar_sm | tojson }};
-    const MAYA_SVG_LG = {{ maya_avatar_lg | tojson }};
-    const ALEX_SVG_SM = {{ alex_avatar_sm | tojson }};
-    const ALEX_SVG_LG = {{ alex_avatar_lg | tojson }};
-    const JORDAN_SVG_SM = {{ jordan_avatar_sm | tojson }};
-    const JORDAN_SVG_LG = {{ jordan_avatar_lg | tojson }};
-    const RILEY_SVG_SM = {{ riley_avatar_sm | tojson }};
-    const RILEY_SVG_LG = {{ riley_avatar_lg | tojson }};
-    const MORGAN_SVG_SM = {{ morgan_avatar_sm | tojson }};
-    const MORGAN_SVG_LG = {{ morgan_avatar_lg | tojson }};
-    const CASEY_SVG_SM = {{ casey_avatar_sm | tojson }};
-    const CASEY_SVG_LG = {{ casey_avatar_lg | tojson }};
-    const QUINN_SVG_SM = {{ quinn_avatar_sm | tojson }};
-    const QUINN_SVG_LG = {{ quinn_avatar_lg | tojson }};
+var AGENTS = {
+  gtm:       {name:"Sam — GTM Engineer",      desc:"Go-to-Market strategy, tech stack, sales ops, growth execution",      ph:"Ask Sam anything about GTM strategy, tools, or execution…",      typing:"Sam is working on it…",      ep:"/api/gtm",       ico:"S", grad:"linear-gradient(135deg,#059669,#34d399)", sugg:["Write a 5-email cold outreach sequence for SaaS founders","Build a full ICP for a B2B HR tech startup","Research HubSpot pricing vs Salesforce","Write a LinkedIn outreach message for a VP of Sales"]},
+  marketing: {name:"Maya — Marketing Strategist",desc:"Brand campaigns, content strategy, email marketing, growth",            ph:"Ask Maya to create campaigns, copy, or marketing strategy…",     typing:"Maya is creating…",          ep:"/api/marketing", ico:"M", grad:"linear-gradient(135deg,#7c3aed,#a78bfa)", sugg:["Write a full email nurture sequence for SaaS trial users","Create a 30-day content calendar for a B2B fintech","Write Facebook ad copy for a productivity app launch","Build a go-to-market launch plan for a new product"]},
+  product:   {name:"Alex — Product Designer",  desc:"UI/UX design, wireframes, design systems, product specs",            ph:"Ask Alex to design flows, critique UI, or write product specs…", typing:"Alex is designing…",          ep:"/api/product",   ico:"A", grad:"linear-gradient(135deg,#0284c7,#38bdf8)", sugg:["Design the onboarding flow for a B2B SaaS app","Critique the UX of my checkout page","Write a PRD for a team collaboration feature","Create a design system for a fintech mobile app"]},
+  sales:     {name:"Jordan — Sales Strategist",desc:"Sales playbooks, outreach scripts, deal coaching, pipeline strategy", ph:"Ask Jordan for scripts, sequences, or deal advice…",              typing:"Jordan is writing…",         ep:"/api/sales",     ico:"J", grad:"linear-gradient(135deg,#b45309,#fbbf24)", sugg:["Write a 6-touch cold outreach sequence for enterprise SaaS","Give me a full discovery call script for an HR software product","Write objection rebuttals for we already have a solution","Create a sales playbook for a new SDR"]},
+  productdev:{name:"Riley — Product Dev Lead", desc:"Ideation to launch — roadmaps, specs, sprints, GTM, and iteration",  ph:"Ask Riley for a roadmap, PRD, user stories, launch plan…",       typing:"Riley is building…",         ep:"/api/productdev",ico:"R", grad:"linear-gradient(135deg,#be185d,#fb7185)", sugg:["Build a full product roadmap for a B2B invoicing SaaS","Write user stories and acceptance criteria for a search feature","Create a go-to-market launch plan for a mobile app","Write a competitive analysis for an AI writing tool"]},
+  finance:   {name:"Morgan — Finance Strategist",desc:"Capital raising, runway, financial models, investor reporting",      ph:"Ask Morgan for financial models, projections, or capital strategy…",typing:"Morgan is modeling…",        ep:"/api/finance",   ico:"M", grad:"linear-gradient(135deg,#065f46,#34d399)", sugg:["Build a 3-year financial model for a SaaS startup","Calculate runway with 3 growth scenarios","Create an investor-ready unit economics breakdown","Write the financials section for a Series A pitch deck"]},
+  accounting:{name:"Casey — Accountant",       desc:"Bookkeeping, financial statements, tax compliance, payroll",          ph:"Ask Casey for journal entries, statements, or accounting setup…", typing:"Casey is reconciling…",      ep:"/api/accounting",ico:"C", grad:"linear-gradient(135deg,#1e3a5f,#60a5fa)", sugg:["Set up a chart of accounts for a SaaS startup","Write journal entries for a software subscription sale","Build a month-end close checklist","Create a P&L statement template for a service business"]},
+  economics: {name:"Quinn — Economist",        desc:"Market analysis, pricing strategy, unit economics, macro factors",    ph:"Ask Quinn for market analysis, pricing strategy, or unit economics…",typing:"Quinn is analyzing…",      ep:"/api/economics", ico:"Q", grad:"linear-gradient(135deg,#7f1d1d,#f87171)", sugg:["Analyze the market size for a B2B HR tech product","Build a pricing strategy for a SaaS product with three tiers","Run a Porter Five Forces analysis for e-commerce","Calculate LTV and CAC targets for a 3x payback period"]}
+};
 
-    const AGENTS = {
-        gtm: {
-            title: 'Sam — GTM Engineer',
-            desc: 'Go-to-Market strategy, tech stack, sales ops, growth execution',
-            placeholder: 'Ask Sam anything about GTM strategy, tools, or execution…',
-            typing: 'Sam is working on it…',
-            endpoint: '/api/gtm',
-            welcomeTitle: "Hey, I'm Sam — your GTM Engineer",
-            welcomeDesc: 'I work at the intersection of strategy, technology, and execution. Ask me about CRM setup, sales automation, data pipelines, growth playbooks, or anything Go-to-Market.',
-            suggestions: ['Write me a 5-email cold outreach sequence for SaaS founders','Build me a full ICP for a B2B HR tech startup','Research HubSpot\'s pricing and positioning vs Salesforce','Write a LinkedIn outreach message for a VP of Sales'],
-            avatarSm: SAM_SVG_SM, avatarLg: SAM_SVG_LG,
-        },
-        marketing: {
-            title: 'Maya — Marketing Strategist',
-            desc: 'Brand campaigns, content strategy, email marketing, growth',
-            placeholder: 'Ask Maya to create campaigns, copy, or marketing strategy…',
-            typing: 'Maya is creating…',
-            endpoint: '/api/marketing',
-            welcomeTitle: "Hi, I'm Maya — your Marketing Strategist",
-            welcomeDesc: 'I create campaigns, content, and marketing systems. Tell me what you need — ad copy, email sequences, content calendars, brand messaging, or a full launch plan.',
-            suggestions: ['Write a full email nurture sequence for SaaS trial users','Create a 30-day content calendar for a B2B fintech company','Write Facebook ad copy for a productivity app launch','Build a go-to-market launch plan for a new product'],
-            avatarSm: MAYA_SVG_SM, avatarLg: MAYA_SVG_LG,
-        },
-        product: {
-            title: 'Alex — Product Designer',
-            desc: 'UI/UX design, wireframes, design systems, product specs',
-            placeholder: 'Ask Alex to design flows, critique UI, or write product specs…',
-            typing: 'Alex is designing…',
-            endpoint: '/api/product',
-            welcomeTitle: "Hey, I'm Alex — your Product Designer",
-            welcomeDesc: 'I design products, flows, and systems. Ask me for wireframes, UX critique, design specs, component breakdowns, user research plans, or a full PRD.',
-            suggestions: ['Design the onboarding flow for a B2B SaaS app','Critique the UX of my checkout page','Write a PRD for a team collaboration feature','Create a design system for a fintech mobile app'],
-            avatarSm: ALEX_SVG_SM, avatarLg: ALEX_SVG_LG,
-        },
-        sales: {
-            title: 'Jordan — Sales Strategist',
-            desc: 'Sales playbooks, outreach scripts, deal coaching, pipeline strategy',
-            placeholder: 'Ask Jordan for scripts, sequences, objection handling, or deal advice…',
-            typing: 'Jordan is writing…',
-            endpoint: '/api/sales',
-            welcomeTitle: "Hey, I'm Jordan — your Sales Strategist",
-            welcomeDesc: 'I write sales scripts, sequences, playbooks, and deal strategies. Tell me what you need and I\'ll deliver the actual asset — ready to use.',
-            suggestions: ['Write a 6-touch cold outreach sequence for enterprise SaaS','Give me a full discovery call script for a HR software product','Write objection rebuttals for "we already have a solution"','Create a sales playbook for a new SDR joining the team'],
-            avatarSm: JORDAN_SVG_SM, avatarLg: JORDAN_SVG_LG,
-        },
-        productdev: {
-            title: 'Riley — Product Development Lead',
-            desc: 'Ideation to launch — roadmaps, specs, sprints, GTM, and iteration',
-            placeholder: 'Ask Riley for a roadmap, PRD, user stories, launch plan…',
-            typing: 'Riley is building…',
-            endpoint: '/api/productdev',
-            welcomeTitle: "Hi, I'm Riley — your Product Development Lead",
-            welcomeDesc: 'I own the full product lifecycle — from raw idea to market launch and beyond. Give me a concept, a problem, or a phase and I\'ll deliver the actual plan, doc, or framework.',
-            suggestions: ['Build a full product roadmap for a B2B invoicing SaaS','Write user stories and acceptance criteria for a search feature','Create a go-to-market launch plan for a mobile app','Write a competitive analysis for an AI writing tool'],
-            avatarSm: RILEY_SVG_SM, avatarLg: RILEY_SVG_LG,
-        },
-        finance: {
-            title: 'Morgan — Finance Strategist',
-            desc: 'Capital raising, runway, financial models, investor reporting',
-            placeholder: 'Ask Morgan for financial models, projections, or capital strategy…',
-            typing: 'Morgan is modeling…',
-            endpoint: '/api/finance',
-            welcomeTitle: "Hi, I'm Morgan — your Finance Strategist",
-            welcomeDesc: 'I build financial models, run fundraising scenarios, and plan your runway. Give me your numbers or assumptions and I\'ll deliver the actual model or analysis.',
-            suggestions: ['Build a 3-year financial model for a SaaS startup','Calculate our runway with 3 growth scenarios','Create an investor-ready unit economics breakdown','Write the financials section for a Series A pitch deck'],
-            avatarSm: MORGAN_SVG_SM, avatarLg: MORGAN_SVG_LG,
-        },
-        accounting: {
-            title: 'Casey — Accountant',
-            desc: 'Bookkeeping, financial statements, tax compliance, payroll',
-            placeholder: 'Ask Casey for journal entries, statements, or accounting setup…',
-            typing: 'Casey is reconciling…',
-            endpoint: '/api/accounting',
-            welcomeTitle: "Hi, I'm Casey — your Accountant",
-            welcomeDesc: 'I keep the books clean and the business compliant. Ask me for financial statements, journal entries, chart of accounts, tax schedules, or bookkeeping setup.',
-            suggestions: ['Set up a chart of accounts for a SaaS startup','Write the journal entries for a software subscription sale','Build a month-end close checklist','Create a P&L statement template for a service business'],
-            avatarSm: CASEY_SVG_SM, avatarLg: CASEY_SVG_LG,
-        },
-        economics: {
-            title: 'Quinn — Economist',
-            desc: 'Market analysis, pricing strategy, unit economics, macro factors',
-            placeholder: 'Ask Quinn for market analysis, pricing strategy, or unit economics…',
-            typing: 'Quinn is analyzing…',
-            endpoint: '/api/economics',
-            welcomeTitle: "Hi, I'm Quinn — your Economist",
-            welcomeDesc: 'I analyze markets, build pricing strategies, and model the big-picture forces affecting your business — from competitor dynamics to macro trends.',
-            suggestions: ['Analyze the market size for a B2B HR tech product','Build a pricing strategy for a SaaS product with three tiers','Run a Porter\'s Five Forces analysis for the e-commerce market','Calculate LTV and CAC targets for a 3x payback period'],
-            avatarSm: QUINN_SVG_SM, avatarLg: QUINN_SVG_LG,
-        }
-    };
+var cur = "gtm";
+var hist = [];
+var sid = "";
+try { sid = localStorage.getItem("vs") || ""; if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("vs",sid);} } catch(e){ sid=Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
-    let currentAgent = 'gtm';
-    let history = [];
-    let currentAttachment = null;
-    let sessionId = '';
-    try {
-        sessionId = localStorage.getItem('volvere_session') || '';
-        if (!sessionId) {
-            sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
-            localStorage.setItem('volvere_session', sessionId);
-        }
-    } catch(e) {
-        sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
+function go(id) {
+  if (id === cur) return;
+  cur = id;
+  hist = [];
+  var a = AGENTS[id];
+  document.querySelectorAll(".abtn").forEach(function(b){ b.classList.remove("on"); });
+  var btn = document.getElementById("btn-"+id);
+  if (btn) btn.classList.add("on");
+  document.getElementById("hdr-ico").textContent = a.ico;
+  document.getElementById("hdr-ico").style.background = a.grad;
+  document.getElementById("hdr-name").textContent = a.name;
+  document.getElementById("hdr-desc").textContent = a.desc;
+  document.getElementById("typing-txt").textContent = a.typing;
+  document.getElementById("msg-input").placeholder = a.ph;
+  var msgs = document.getElementById("msgs");
+  msgs.innerHTML = "";
+  var w = document.createElement("div");
+  w.className = "welcome";
+  w.id = "welcome";
+  var icoDiv = document.createElement("div");
+  icoDiv.id = "welcome-ico";
+  icoDiv.style.cssText = "width:64px;height:64px;border-radius:16px;background:"+a.grad+";display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:white;margin:0 auto 16px";
+  icoDiv.textContent = a.ico;
+  var h3 = document.createElement("h3");
+  h3.textContent = a.name;
+  var p = document.createElement("p");
+  p.textContent = a.desc;
+  var suggs = document.createElement("div");
+  suggs.className = "suggs";
+  a.sugg.forEach(function(s){
+    var d = document.createElement("div");
+    d.className = "sugg";
+    d.textContent = s;
+    d.onclick = function(){ usesugg(d); };
+    suggs.appendChild(d);
+  });
+  w.appendChild(icoDiv); w.appendChild(h3); w.appendChild(p); w.appendChild(suggs);
+  msgs.appendChild(w);
+  loadHist(id);
+}
 
-    async function loadAgentHistory(agentId) {
-        try {
-            const res = await fetch(`/api/agent/${agentId}/history?session_id=${encodeURIComponent(sessionId)}`);
-            const msgs = await res.json();
-            if (!msgs.length) return false;
-            history = msgs;
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            msgs.forEach(m => {
-                const a = AGENTS[agentId];
-                addMessage(m.role === 'user' ? 'user' : 'agent', m.content,
-                           m.role === 'user' ? 'You' : a.title);
-            });
-            return true;
-        } catch(e) { return false; }
-    }
+async function loadHist(id) {
+  try {
+    var r = await fetch("/api/agent/"+id+"/history?session_id="+encodeURIComponent(sid));
+    var msgs = await r.json();
+    if (!msgs.length) return;
+    hist = msgs;
+    var container = document.getElementById("msgs");
+    container.innerHTML = "";
+    msgs.forEach(function(m){ addMsg(m.role==="user"?"u":"a", m.content); });
+  } catch(e) {}
+}
 
-    function selectAgent(id) {
-        if (id === currentAgent) return;
-        currentAgent = id;
-        history = [];
-        try { clearAttachment(); } catch(e) {}
+function usesugg(el) {
+  document.getElementById("msg-input").value = el.textContent;
+  sendMsg();
+}
 
-        document.querySelectorAll('.agent-btn').forEach(function(b) {
-            b.classList.toggle('active', b.getAttribute('data-agent') === id);
-        });
-
-        const a = AGENTS[id];
-        if (!a) return;
-
-        document.getElementById('agent-header-icon').innerHTML = a.avatarLg;
-        document.getElementById('agent-header-name').textContent = a.title;
-        document.getElementById('agent-header-desc').textContent = a.desc;
-        document.getElementById('typing-text').textContent = a.typing;
-        document.getElementById('msg-input').placeholder = a.placeholder;
-
-        const welcome = document.createElement('div');
-        welcome.className = 'welcome';
-        welcome.id = 'welcome';
-        const iconWrap = document.createElement('div');
-        iconWrap.style.cssText = 'display:flex;justify-content:center;';
-        const iconInner = document.createElement('div');
-        iconInner.style.cssText = 'width:72px;height:72px;border-radius:18px;overflow:hidden;';
-        iconInner.innerHTML = a.avatarLg;
-        iconWrap.appendChild(iconInner);
-        const h3 = document.createElement('h3');
-        h3.textContent = a.welcomeTitle;
-        const p = document.createElement('p');
-        p.textContent = a.welcomeDesc;
-        const sugg = document.createElement('div');
-        sugg.className = 'suggestions';
-        a.suggestions.forEach(s => {
-            const d = document.createElement('div');
-            d.className = 'suggestion';
-            d.textContent = s;
-            d.addEventListener('click', () => sendSuggestion(d));
-            sugg.appendChild(d);
-        });
-        welcome.appendChild(iconWrap);
-        welcome.appendChild(h3);
-        welcome.appendChild(p);
-        welcome.appendChild(sugg);
-        const msgs = document.getElementById('messages');
-        msgs.innerHTML = '';
-        msgs.appendChild(welcome);
-
-        loadAgentHistory(id);
-    }
-
-
-    function sendSuggestion(el) {
-        document.getElementById('msg-input').value = el.textContent || el.innerText;
-        sendMessage();
-    }
-
-    async function sendMessage() {
-        const input = document.getElementById('msg-input');
-        const text = input.value.trim();
-        if (!text) return;
-        input.value = '';
-        input.style.height = 'auto';
-
-        document.getElementById('welcome')?.remove();
-        addMessage('user', text, 'You');
-
-        document.getElementById('typing').classList.add('show');
-
-        history.push({ role: 'user', content: text });
-
-        const a = AGENTS[currentAgent];
-        const attachment = currentAttachment;
-        clearAttachment();
-        try {
-            const res = await fetch(a.endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, history: history.slice(0, -1), session_id: sessionId, attachment })
-            });
-            const raw = await res.text();
-            document.getElementById('typing').classList.remove('show');
-            let data;
-            try { data = JSON.parse(raw); } catch(_) {
-                addMessage('agent', '⚠️ Server error (HTTP ' + res.status + ')', a.title);
-                return;
-            }
-            if (data.error) {
-                addMessage('agent', '⚠️ ' + data.error, a.title);
-            } else {
-                addMessage('agent', data.reply || '(no response)', a.title);
-                history.push({ role: 'assistant', content: data.reply });
-            }
-        } catch(e) {
-            document.getElementById('typing').classList.remove('show');
-            addMessage('agent', '⚠️ ' + e.message, a.title);
-        }
-    }
-
-    function addMessage(type, text, name) {
-        const msgs = document.getElementById('messages');
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        const bubbleContent = type === 'agent' ? marked.parse(text || '') : escapeHtml(text || '');
-        const avatarSvg = AGENTS[currentAgent].avatarSm;
-        const copyBtn = type === 'agent'
-            ? `<button onclick="copyText(this, ${JSON.stringify(text)})" style="margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;">Copy</button>`
-            : '';
-        div.innerHTML = `
-            <div class="msg-avatar" style="background:none;padding:0;overflow:hidden;border-radius:10px;">${type === 'agent' ? avatarSvg : '👤'}</div>
-            <div>
-                <div class="msg-name">${name}</div>
-                <div class="msg-bubble">${bubbleContent}</div>
-                ${copyBtn}
-            </div>`;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
-    }
-
-    function copyText(btn, text) {
-        navigator.clipboard.writeText(text).then(() => {
-            btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = 'Copy', 1500);
-        });
-    }
-
-    function escapeHtml(t) {
-        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    function clearAttachment() {
-        currentAttachment = null;
-        document.getElementById('attachment-chip').style.display = 'none';
-        document.getElementById('attachment-name').textContent = '';
-        document.getElementById('file-input').value = '';
-    }
-
-    document.getElementById('file-input').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const chip = document.getElementById('attachment-chip');
-        document.getElementById('attachment-name').textContent = 'Uploading ' + file.name + '…';
-        chip.style.display = 'flex';
-        const formData = new FormData();
-        formData.append('file', file);
-        try {
-            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.error) { alert(data.error); clearAttachment(); return; }
-            currentAttachment = data;
-            document.getElementById('attachment-name').textContent = file.name;
-        } catch(err) {
-            alert('Upload failed: ' + err.message);
-            clearAttachment();
-        }
+async function sendMsg() {
+  var inp = document.getElementById("msg-input");
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+  inp.style.height = "auto";
+  var w = document.getElementById("welcome");
+  if (w) w.remove();
+  addMsg("u", text);
+  document.getElementById("typing").classList.add("show");
+  hist.push({role:"user", content:text});
+  var a = AGENTS[cur];
+  try {
+    var res = await fetch(a.ep, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:text, history:hist.slice(0,-1), session_id:sid})
     });
+    document.getElementById("typing").classList.remove("show");
+    var data = await res.json();
+    if (data.error) { addMsg("a", "⚠️ "+data.error); }
+    else { addMsg("a", data.reply||"(no response)"); hist.push({role:"assistant",content:data.reply}); }
+  } catch(e) {
+    document.getElementById("typing").classList.remove("show");
+    addMsg("a", "⚠️ "+e.message);
+  }
+}
 
-    // Load history for initial agent on page load
-    loadAgentHistory(currentAgent);
+function addMsg(type, text) {
+  var msgs = document.getElementById("msgs");
+  var a = AGENTS[cur];
+  var div = document.createElement("div");
+  div.className = "msg "+type;
+  var avt = document.createElement("div");
+  avt.className = "mavt";
+  if (type==="a") { avt.textContent=a.ico; avt.style.background=a.grad; }
+  else { avt.textContent="👤"; }
+  var body = document.createElement("div");
+  var nm = document.createElement("div");
+  nm.className = "mname";
+  nm.textContent = type==="a" ? a.name : "You";
+  var bub = document.createElement("div");
+  bub.className = "mbub";
+  if (type==="a") { try { bub.innerHTML = marked.parse(text||""); } catch(e){ bub.textContent=text||""; } }
+  else { bub.textContent = text||""; }
+  body.appendChild(nm); body.appendChild(bub);
+  div.appendChild(avt); div.appendChild(body);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
 
-    const input = document.getElementById('msg-input');
-    input.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+function escHtml(t){ return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+async function openSettings() {
+  document.getElementById("settings-overlay").style.display = "flex";
+  try {
+    var r = await fetch("/api/settings/all");
+    var data = await r.json();
+    document.querySelectorAll(".int-inp").forEach(function(inp){
+      var k = inp.dataset.key;
+      if (data[k]) { inp.type==="text" ? (inp.value=data[k]) : (inp.placeholder="••••••••"+data[k]); inp.classList.add("saved"); }
     });
-    input.addEventListener('input', () => {
-        input.style.height = 'auto';
-        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-    });
+  } catch(e) {}
+}
 
-    async function openSettings() {
-        document.getElementById('settings-overlay').style.display = 'flex';
-        const res = await fetch('/api/settings/all');
-        const data = await res.json();
-        document.querySelectorAll('.int-input').forEach(inp => {
-            const k = inp.dataset.key;
-            if (data[k]) {
-                if (inp.type === 'text') {
-                    inp.value = data[k];
-                } else {
-                    inp.placeholder = '••••••••' + data[k];
-                }
-                inp.classList.add('saved');
-            }
-        });
-    }
+function closeSettings() {
+  document.getElementById("settings-overlay").style.display = "none";
+  document.querySelectorAll(".int-inp").forEach(function(inp){ inp.value=""; });
+}
 
-    function closeSettings() {
-        document.getElementById('settings-overlay').style.display = 'none';
-        document.querySelectorAll('.int-input').forEach(inp => inp.value = '');
-    }
+async function saveAllKeys() {
+  var keys = {};
+  document.querySelectorAll(".int-inp").forEach(function(inp){ if(inp.value.trim()) keys[inp.dataset.key]=inp.value.trim(); });
+  if (!Object.keys(keys).length) { closeSettings(); return; }
+  await fetch("/api/settings/all",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(keys)});
+  closeSettings();
+}
 
-    async function saveAllKeys() {
-        const keys = {};
-        document.querySelectorAll('.int-input').forEach(inp => {
-            if (inp.value.trim()) keys[inp.dataset.key] = inp.value.trim();
-        });
-        if (!Object.keys(keys).length) { closeSettings(); return; }
-        await fetch('/api/settings/all', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(keys)
-        });
-        closeSettings();
-        const btn = document.querySelector('button[onclick="openSettings()"]');
-        btn.textContent = '✓ Saved';
-        setTimeout(() => btn.textContent = '⚙️ Settings', 2000);
-    }
+document.getElementById("settings-overlay").addEventListener("click", function(e){ if(e.target===this) closeSettings(); });
 
-    document.getElementById('settings-overlay').addEventListener('click', e => {
-        if (e.target === document.getElementById('settings-overlay')) closeSettings();
-    });
+var inp = document.getElementById("msg-input");
+inp.addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();} });
+inp.addEventListener("input", function(){ this.style.height="auto"; this.style.height=Math.min(this.scrollHeight,120)+"px"; });
 
-    // Sidebar delegation — backup to onclick attributes on each button
-    try {
-        document.querySelector('.sidebar').addEventListener('click', function(e) {
-            var btn = e.target.closest('[data-agent]');
-            if (btn) selectAgent(btn.getAttribute('data-agent'));
-        });
-    } catch(e) {}
+// Build initial suggestions
+(function(){
+  var a = AGENTS[cur];
+  var suggs = document.getElementById("suggs");
+  a.sugg.forEach(function(s){
+    var d = document.createElement("div");
+    d.className = "sugg";
+    d.textContent = s;
+    d.onclick = function(){ usesugg(d); };
+    suggs.appendChild(d);
+  });
+  loadHist(cur);
+})();
 </script>
 </body>
-</html>
-"""
+</html>"""
 
 
 @app.route("/operations")
 def operations():
-    return render_template_string(OPERATIONS_HTML,
-        sam_avatar_sm=SAM_AVATAR_SM, sam_avatar_lg=SAM_AVATAR_LG,
-        maya_avatar_sm=MAYA_AVATAR_SM, maya_avatar_lg=MAYA_AVATAR_LG,
-        alex_avatar_sm=ALEX_AVATAR_SM, alex_avatar_lg=ALEX_AVATAR_LG,
-        jordan_avatar_sm=JORDAN_AVATAR_SM, jordan_avatar_lg=JORDAN_AVATAR_LG,
-        riley_avatar_sm=RILEY_AVATAR_SM, riley_avatar_lg=RILEY_AVATAR_LG,
-        morgan_avatar_sm=MORGAN_AVATAR_SM, morgan_avatar_lg=MORGAN_AVATAR_LG,
-        casey_avatar_sm=CASEY_AVATAR_SM, casey_avatar_lg=CASEY_AVATAR_LG,
-        quinn_avatar_sm=QUINN_AVATAR_SM, quinn_avatar_lg=QUINN_AVATAR_LG)
+    return OPERATIONS_HTML
 
 
 
@@ -2037,6 +1723,21 @@ def check_api_key():
     if not provided and request.is_json:
         provided = request.json.get("api_key", "")
     return provided == api_key
+
+
+def require_api_key():
+    """Return a 401 response when API key is invalid; otherwise None."""
+    if check_api_key():
+        return None
+    return jsonify({"error": "Invalid or missing API key", "status": "error"}), 401
+
+
+def get_request_json():
+    """Validate JSON payload and return (data, error_response)."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return None, (jsonify({"error": "Request body must be valid JSON object", "status": "error"}), 400)
+    return data, None
 
 
 def build_gtm_system_prompt():
@@ -2094,8 +1795,17 @@ def _run_agent(system_prompt, messages, agent_id, session_id="", user_text=""):
     client = anthropic.Anthropic()
     active_tools = get_active_tools()
     tool_log = []
+    max_tool_rounds = 8
+    tool_rounds = 0
 
     while True:
+        if tool_rounds >= max_tool_rounds:
+            return jsonify({
+                "error": "Agent exceeded tool-call limit for this request. Please refine your prompt and try again.",
+                "agent": agent_id,
+                "status": "error",
+            }), 422
+
         kwargs = dict(model=CLAUDE_MODEL, max_tokens=2048,
                       system=system_prompt, messages=messages)
         if active_tools:
@@ -2104,11 +1814,18 @@ def _run_agent(system_prompt, messages, agent_id, session_id="", user_text=""):
         resp = client.messages.create(**kwargs)
 
         if resp.stop_reason == "tool_use":
+            tool_rounds += 1
             tool_results = []
             for block in resp.content:
                 if block.type == "tool_use":
                     fn = TOOL_FUNCTIONS.get(block.name)
-                    result = fn(**block.input) if fn else f"Unknown tool: {block.name}"
+                    if not fn:
+                        result = f"Unknown tool: {block.name}"
+                    else:
+                        try:
+                            result = fn(**block.input)
+                        except Exception as e:
+                            result = f"Tool execution failed for {block.name}: {e}"
                     tool_log.append(f"[{block.name}] {result}")
                     tool_results.append({
                         "type": "tool_result",
@@ -2149,9 +1866,12 @@ def _build_user_message(text, attachment):
 @app.route("/api/gtm", methods=["POST"])
 def gtm_chat():
     try:
-        if not check_api_key():
-            return jsonify({"error": "Invalid or missing API key"}), 401
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         attachment = data.get("attachment")
         session_id = data.get("session_id", "")
@@ -2166,7 +1886,12 @@ def gtm_chat():
 @app.route("/api/marketing", methods=["POST"])
 def marketing_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2179,7 +1904,12 @@ def marketing_chat():
 @app.route("/api/product", methods=["POST"])
 def product_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2192,7 +1922,12 @@ def product_chat():
 @app.route("/api/sales", methods=["POST"])
 def sales_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2205,7 +1940,12 @@ def sales_chat():
 @app.route("/api/productdev", methods=["POST"])
 def productdev_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2218,7 +1958,12 @@ def productdev_chat():
 @app.route("/api/finance", methods=["POST"])
 def finance_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2231,7 +1976,12 @@ def finance_chat():
 @app.route("/api/accounting", methods=["POST"])
 def accounting_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2244,7 +1994,12 @@ def accounting_chat():
 @app.route("/api/economics", methods=["POST"])
 def economics_chat():
     try:
-        data = request.json
+        auth_error = require_api_key()
+        if auth_error:
+            return auth_error
+        data, json_error = get_request_json()
+        if json_error:
+            return json_error
         text = data.get("message", "")
         user_content = _build_user_message(text, data.get("attachment"))
         messages = data.get("history", []) + [{"role": "user", "content": user_content}]
@@ -2355,7 +2110,7 @@ API_DOCS_HTML = """
     </div>
     <div class="nav-links">
         <a href="/operations" class="nav-btn">⚙️ Operations</a>
-        <a href="/" class="nav-btn">📧 Dashboard</a>
+        <a href="/dashboard" class="nav-btn">📧 Dashboard</a>
     </div>
 </header>
 
