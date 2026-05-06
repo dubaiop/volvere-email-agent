@@ -1324,6 +1324,9 @@ OPERATIONS_HTML = """
                       align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
                       overflow: hidden; pointer-events: none; }
         .agent-icon img, .agent-icon svg, .agent-icon svg * { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; pointer-events: none; }
+        .agent-initial { width: 36px; height: 36px; border-radius: 10px; display: flex;
+                         align-items: center; justify-content: center; font-size: 15px;
+                         font-weight: 700; color: white; flex-shrink: 0; pointer-events: none; }
         .agent-name { font-size: 14px; font-weight: 600; }
         .agent-tag { font-size: 11px; color: var(--muted); margin-top: 1px; }
         .coming-soon { opacity: 0.4; cursor: default; }
@@ -1530,40 +1533,40 @@ OPERATIONS_HTML = """
     <div class="sidebar">
         <div class="sidebar-title">Agents</div>
 
-        <button class="agent-btn active" data-agent="gtm">
-            <div class="agent-icon">{{ sam_avatar_sm | safe }}</div>
+        <button class="agent-btn active" data-agent="gtm" onclick="window.selectAgent('gtm')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#059669,#34d399);">S</div>
             <div>
                 <div class="agent-name">Sam</div>
                 <div class="agent-tag">GTM Engineer</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="marketing">
-            <div class="agent-icon">{{ maya_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="marketing" onclick="window.selectAgent('marketing')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">M</div>
             <div>
                 <div class="agent-name">Maya</div>
                 <div class="agent-tag">Marketing Strategist</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="product">
-            <div class="agent-icon">{{ alex_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="product" onclick="window.selectAgent('product')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#0284c7,#38bdf8);">A</div>
             <div>
                 <div class="agent-name">Alex</div>
                 <div class="agent-tag">Product Designer</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="sales">
-            <div class="agent-icon">{{ jordan_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="sales" onclick="window.selectAgent('sales')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#b45309,#fbbf24);">J</div>
             <div>
                 <div class="agent-name">Jordan</div>
                 <div class="agent-tag">Sales Strategist</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="productdev">
-            <div class="agent-icon">{{ riley_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="productdev" onclick="window.selectAgent('productdev')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#be185d,#fb7185);">R</div>
             <div>
                 <div class="agent-name">Riley</div>
                 <div class="agent-tag">Product Development</div>
@@ -1572,24 +1575,24 @@ OPERATIONS_HTML = """
 
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
 
-        <button class="agent-btn" data-agent="finance">
-            <div class="agent-icon">{{ morgan_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="finance" onclick="window.selectAgent('finance')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#065f46,#34d399);">M</div>
             <div>
                 <div class="agent-name">Morgan</div>
                 <div class="agent-tag">Finance Strategist</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="accounting">
-            <div class="agent-icon">{{ casey_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="accounting" onclick="window.selectAgent('accounting')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#1e3a5f,#60a5fa);">C</div>
             <div>
                 <div class="agent-name">Casey</div>
                 <div class="agent-tag">Accountant</div>
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="economics">
-            <div class="agent-icon">{{ quinn_avatar_sm | safe }}</div>
+        <button class="agent-btn" data-agent="economics" onclick="window.selectAgent('economics')">
+            <div class="agent-initial" style="background:linear-gradient(135deg,#7f1d1d,#f87171);">Q</div>
             <div>
                 <div class="agent-name">Quinn</div>
                 <div class="agent-tag">Economist</div>
