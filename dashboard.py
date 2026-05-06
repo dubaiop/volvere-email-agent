@@ -1533,7 +1533,7 @@ OPERATIONS_HTML = """
     <div class="sidebar">
         <div class="sidebar-title">Agents</div>
 
-        <button class="agent-btn active" data-agent="gtm" onclick="window.selectAgent('gtm')">
+        <button class="agent-btn active" data-agent="gtm" onclick="selectAgent('gtm')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#059669,#34d399);">S</div>
             <div>
                 <div class="agent-name">Sam</div>
@@ -1541,7 +1541,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="marketing" onclick="window.selectAgent('marketing')">
+        <button class="agent-btn" data-agent="marketing" onclick="selectAgent('marketing')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">M</div>
             <div>
                 <div class="agent-name">Maya</div>
@@ -1549,7 +1549,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="product" onclick="window.selectAgent('product')">
+        <button class="agent-btn" data-agent="product" onclick="selectAgent('product')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#0284c7,#38bdf8);">A</div>
             <div>
                 <div class="agent-name">Alex</div>
@@ -1557,7 +1557,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="sales" onclick="window.selectAgent('sales')">
+        <button class="agent-btn" data-agent="sales" onclick="selectAgent('sales')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#b45309,#fbbf24);">J</div>
             <div>
                 <div class="agent-name">Jordan</div>
@@ -1565,7 +1565,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="productdev" onclick="window.selectAgent('productdev')">
+        <button class="agent-btn" data-agent="productdev" onclick="selectAgent('productdev')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#be185d,#fb7185);">R</div>
             <div>
                 <div class="agent-name">Riley</div>
@@ -1575,7 +1575,7 @@ OPERATIONS_HTML = """
 
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4b5563;padding:16px 4px 6px;font-weight:700;border-top:1px solid #1e1e2e;margin-top:8px;">Economics Team</div>
 
-        <button class="agent-btn" data-agent="finance" onclick="window.selectAgent('finance')">
+        <button class="agent-btn" data-agent="finance" onclick="selectAgent('finance')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#065f46,#34d399);">M</div>
             <div>
                 <div class="agent-name">Morgan</div>
@@ -1583,7 +1583,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="accounting" onclick="window.selectAgent('accounting')">
+        <button class="agent-btn" data-agent="accounting" onclick="selectAgent('accounting')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#1e3a5f,#60a5fa);">C</div>
             <div>
                 <div class="agent-name">Casey</div>
@@ -1591,7 +1591,7 @@ OPERATIONS_HTML = """
             </div>
         </button>
 
-        <button class="agent-btn" data-agent="economics" onclick="window.selectAgent('economics')">
+        <button class="agent-btn" data-agent="economics" onclick="selectAgent('economics')">
             <div class="agent-initial" style="background:linear-gradient(135deg,#7f1d1d,#f87171);">Q</div>
             <div>
                 <div class="agent-name">Quinn</div>
@@ -1648,12 +1648,6 @@ OPERATIONS_HTML = """
 </div>
 
 <script>
-    // Wire up sidebar agent buttons — script is at bottom of body so DOM is ready
-    document.querySelector('.sidebar').addEventListener('click', function(e) {
-        var btn = e.target.closest('[data-agent]');
-        if (btn) window.selectAgent(btn.getAttribute('data-agent'));
-    });
-
     const SAM_SVG_SM = {{ sam_avatar_sm | tojson }};
     const SAM_SVG_LG = {{ sam_avatar_lg | tojson }};
     const MAYA_SVG_SM = {{ maya_avatar_sm | tojson }};
@@ -1793,7 +1787,7 @@ OPERATIONS_HTML = """
         } catch(e) { return false; }
     }
 
-    window.selectAgent = function selectAgent(id) {
+    function selectAgent(id) {
         if (id === currentAgent) return;
         currentAgent = id;
         history = [];
@@ -2005,6 +1999,14 @@ OPERATIONS_HTML = """
     document.getElementById('settings-overlay').addEventListener('click', e => {
         if (e.target === document.getElementById('settings-overlay')) closeSettings();
     });
+
+    // Sidebar delegation — backup to onclick attributes on each button
+    try {
+        document.querySelector('.sidebar').addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-agent]');
+            if (btn) selectAgent(btn.getAttribute('data-agent'));
+        });
+    } catch(e) {}
 </script>
 </body>
 </html>
