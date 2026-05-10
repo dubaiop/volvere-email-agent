@@ -39,6 +39,43 @@ def send_reply(client_config: dict, original_email: dict, reply_body: str) -> No
         print(f"  SendGrid error {e.code}: {e.read().decode()}")
 
 
+def send_outbound(client_config: dict, to_email: str, to_name: str, subject: str, body: str) -> bool:
+    """Send a fresh cold outbound email (not a reply) via SendGrid."""
+    sender = client_config["email_address"]
+    sendgrid_key = os.environ.get("SENDGRID_API_KEY", "")
+    if not sendgrid_key:
+        print("  No SENDGRID_API_KEY set — cannot send outbound email.")
+        return False
+
+    to_field = {"email": to_email}
+    if to_name:
+        to_field["name"] = to_name
+
+    data = json.dumps({
+        "personalizations": [{"to": [to_field]}],
+        "from": {"email": sender},
+        "subject": subject,
+        "content": [{"type": "text/plain", "value": body}],
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.sendgrid.com/v3/mail/send",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {sendgrid_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            print(f"  Outbound sent to {to_email} (status {resp.status})")
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"  SendGrid error {e.code}: {e.read().decode()}")
+        return False
+
+
 def _extract_address(sender_field: str) -> str:
     if "<" in sender_field and ">" in sender_field:
         return sender_field.split("<")[1].strip(">").strip()

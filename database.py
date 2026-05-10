@@ -63,6 +63,18 @@ def init_db():
                         created_at TEXT NOT NULL
                     )
                 """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS outbound_emails (
+                        id SERIAL PRIMARY KEY,
+                        from_persona TEXT NOT NULL,
+                        from_name TEXT NOT NULL,
+                        to_email TEXT NOT NULL,
+                        to_name TEXT,
+                        subject TEXT NOT NULL,
+                        body TEXT NOT NULL,
+                        sent_at TEXT NOT NULL
+                    )
+                """)
             conn.commit()
     else:
         with _conn() as conn:
@@ -91,6 +103,14 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     session_id TEXT, agent_id TEXT, role TEXT,
                     content TEXT, created_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS outbound_emails (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    from_persona TEXT, from_name TEXT,
+                    to_email TEXT, to_name TEXT,
+                    subject TEXT, body TEXT, sent_at TEXT
                 )
             """)
             conn.commit()
@@ -186,6 +206,40 @@ def already_processed(client_id: str, sender: str, body: str) -> bool:
                 LIMIT 1
             """, (client_id, sender, body)).fetchone()
             return row is not None
+
+
+def log_outbound(from_persona: str, from_name: str, to_email: str, to_name: str, subject: str, body: str):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO outbound_emails
+                        (from_persona, from_name, to_email, to_name, subject, body, sent_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (from_persona, from_name, to_email, to_name, subject, body, now))
+            conn.commit()
+    else:
+        with _conn() as conn:
+            conn.execute("""
+                INSERT INTO outbound_emails
+                    (from_persona, from_name, to_email, to_name, subject, body, sent_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (from_persona, from_name, to_email, to_name, subject, body, now))
+            conn.commit()
+
+
+def get_outbound_emails(limit: int = 100) -> list[dict]:
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("SELECT * FROM outbound_emails ORDER BY sent_at DESC LIMIT %s", (limit,))
+                return [dict(r) for r in cur.fetchall()]
+    else:
+        with _conn() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM outbound_emails ORDER BY sent_at DESC LIMIT ?", (limit,)).fetchall()
+            return [dict(r) for r in rows]
 
 
 def get_stats() -> dict:

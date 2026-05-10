@@ -12,7 +12,7 @@ import time
 import anthropic
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
-from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history
+from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history, log_outbound, get_outbound_emails
 from integrations import ALL_TOOLS, TOOL_FUNCTIONS
 from config import CLIENTS, CLAUDE_MODEL, SCHEDULE_MINUTES
 
@@ -2516,6 +2516,56 @@ def upload_file():
             return jsonify({"error": f"Unsupported file type: .{ext}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/send-outreach", methods=["POST"])
+def send_outreach():
+    """
+    Send a cold outbound email from a chosen C-suite persona via SendGrid.
+
+    Body (JSON):
+      to_email    — recipient email (required)
+      to_name     — recipient name (optional)
+      subject     — email subject (required)
+      body        — email body text (required)
+      from_persona — one of: ceo_advisor, coo_advisor, cfo_advisor, cmo_advisor, cto_advisor
+                     defaults to cmo_advisor
+    """
+    from email_sender import send_outbound
+
+    data = request.json or {}
+    to_email = data.get("to_email", "").strip()
+    to_name = data.get("to_name", "").strip()
+    subject = data.get("subject", "").strip()
+    body = data.get("body", "").strip()
+    from_persona = data.get("from_persona", "cmo_advisor").strip()
+
+    if not to_email or not subject or not body:
+        return jsonify({"error": "to_email, subject, and body are required"}), 400
+
+    if from_persona not in CLIENTS:
+        return jsonify({"error": f"Unknown persona '{from_persona}'. Choose from: {list(CLIENTS.keys())}"}), 400
+
+    client_config = CLIENTS[from_persona]
+    success = send_outbound(client_config, to_email, to_name, subject, body)
+
+    if success:
+        log_outbound(from_persona, client_config["name"], to_email, to_name, subject, body)
+        return jsonify({
+            "status": "sent",
+            "from": client_config["email_address"],
+            "from_name": client_config["name"],
+            "to": to_email,
+            "subject": subject,
+        })
+    else:
+        return jsonify({"error": "Failed to send via SendGrid — check SENDGRID_API_KEY"}), 500
+
+
+@app.route("/outbound", methods=["GET"])
+def outbound_log():
+    """Return all outbound cold emails sent via /send-outreach."""
+    return jsonify(get_outbound_emails(limit=200))
 
 
 if __name__ == "__main__":
