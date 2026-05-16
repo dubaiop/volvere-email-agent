@@ -12,17 +12,73 @@ import time
 import anthropic
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template_string, jsonify, request
-from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history, log_outbound, get_outbound_emails
+from database import get_all_emails, get_stats, init_db, get_setting, set_setting, save_agent_message, get_agent_history, log_outbound, get_outbound_emails, get_due_followups, update_touch
 from integrations import ALL_TOOLS, TOOL_FUNCTIONS
 from config import CLIENTS, CLAUDE_MODEL, SCHEDULE_MINUTES
 
 app = Flask(__name__)
 
 
+_TOUCH_DELAYS = {1: 3, 2: 4, 3: 7, 4: 7}  # days until next touch after sending touch N
+
+
+def _extract_touch(sequence: str, touch_num: int) -> dict:
+    """Parse Subject + Body for a specific touch number from a multi-touch outreach sequence."""
+    import re
+    subject, body_lines, in_touch = "", [], False
+    next_num = touch_num + 1
+    for line in sequence.split("\n"):
+        low = line.lower().strip()
+        if not in_touch:
+            if re.search(rf'\btouch\s+{touch_num}\b', low):
+                in_touch = True
+            continue
+        if next_num <= 5 and re.search(rf'\btouch\s+{next_num}\b', low):
+            break
+        if low in ("---", "***") or "linkedin sequence" in low:
+            break
+        if re.match(r'\*{0,2}subject\b', low) and ":" in line:
+            subject = line.split(":", 1)[-1].strip().strip("*\"' ")
+        else:
+            body_lines.append(line)
+    body = "\n".join(body_lines).strip().lstrip("-").strip()
+    return {"subject": subject or f"Following up (touch {touch_num})", "body": body}
+
+
+def send_followups():
+    """Check for due follow-up emails and send the next touch in the sequence."""
+    import logging
+    from datetime import datetime, timedelta
+    from email_sender import send_outbound
+    logger = logging.getLogger(__name__)
+    try:
+        due = get_due_followups()
+        logger.info(f"Follow-up check: {len(due)} due")
+        for record in due:
+            next_touch = (record.get("touch_number") or 1) + 1
+            if next_touch > 5:
+                continue
+            touch = _extract_touch(record.get("full_sequence", ""), next_touch)
+            if not touch["body"]:
+                logger.warning(f"Could not parse touch {next_touch} for record {record['id']}")
+                continue
+            persona = record.get("from_persona", "cmo_advisor")
+            client_config = CLIENTS.get(persona, CLIENTS["cmo_advisor"])
+            success = send_outbound(client_config, record["to_email"], record.get("to_name", ""), touch["subject"], touch["body"])
+            if success:
+                delay = _TOUCH_DELAYS.get(next_touch, 7)
+                nxt = (datetime.now() + timedelta(days=delay)).strftime("%Y-%m-%d %H:%M:%S") if next_touch < 5 else ""
+                update_touch(record["id"], next_touch, nxt)
+                logger.info(f"Sent touch {next_touch} → {record['to_email']}")
+    except Exception as e:
+        logger.error(f"send_followups error: {e}")
+
+
 def run_scheduler():
     from main import run
     run()
     schedule.every(SCHEDULE_MINUTES).minutes.do(run)
+    schedule.every(6).hours.do(send_followups)
     while True:
         schedule.run_pending()
         time.sleep(30)
@@ -2533,12 +2589,14 @@ def send_outreach():
     """
     from email_sender import send_outbound
 
+    from datetime import datetime, timedelta
     data = request.json or {}
     to_email = data.get("to_email", "").strip()
     to_name = data.get("to_name", "").strip()
     subject = data.get("subject", "").strip()
     body = data.get("body", "").strip()
     from_persona = data.get("from_persona", "cmo_advisor").strip()
+    full_sequence = data.get("full_sequence", "").strip()
 
     if not to_email or not subject or not body:
         return jsonify({"error": "to_email, subject, and body are required"}), 400
@@ -2550,13 +2608,18 @@ def send_outreach():
     success = send_outbound(client_config, to_email, to_name, subject, body)
 
     if success:
-        log_outbound(from_persona, client_config["name"], to_email, to_name, subject, body)
+        next_follow_up_at = ""
+        if full_sequence:
+            next_follow_up_at = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+        log_outbound(from_persona, client_config["name"], to_email, to_name, subject, body,
+                     full_sequence, next_follow_up_at)
         return jsonify({
             "status": "sent",
             "from": client_config["email_address"],
             "from_name": client_config["name"],
             "to": to_email,
             "subject": subject,
+            "follow_ups_scheduled": bool(full_sequence),
         })
     else:
         return jsonify({"error": "Failed to send via SendGrid — check SENDGRID_API_KEY"}), 500

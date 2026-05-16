@@ -72,9 +72,21 @@ def init_db():
                         to_name TEXT,
                         subject TEXT NOT NULL,
                         body TEXT NOT NULL,
-                        sent_at TEXT NOT NULL
+                        sent_at TEXT NOT NULL,
+                        touch_number INTEGER DEFAULT 1,
+                        full_sequence TEXT,
+                        next_follow_up_at TEXT
                     )
                 """)
+                for col in [
+                    "ALTER TABLE outbound_emails ADD COLUMN IF NOT EXISTS touch_number INTEGER DEFAULT 1",
+                    "ALTER TABLE outbound_emails ADD COLUMN IF NOT EXISTS full_sequence TEXT",
+                    "ALTER TABLE outbound_emails ADD COLUMN IF NOT EXISTS next_follow_up_at TEXT",
+                ]:
+                    try:
+                        cur.execute(col)
+                    except Exception:
+                        pass
             conn.commit()
     else:
         with _conn() as conn:
@@ -110,9 +122,21 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     from_persona TEXT, from_name TEXT,
                     to_email TEXT, to_name TEXT,
-                    subject TEXT, body TEXT, sent_at TEXT
+                    subject TEXT, body TEXT, sent_at TEXT,
+                    touch_number INTEGER DEFAULT 1,
+                    full_sequence TEXT,
+                    next_follow_up_at TEXT
                 )
             """)
+            for col_sql in [
+                "ALTER TABLE outbound_emails ADD COLUMN touch_number INTEGER DEFAULT 1",
+                "ALTER TABLE outbound_emails ADD COLUMN full_sequence TEXT",
+                "ALTER TABLE outbound_emails ADD COLUMN next_follow_up_at TEXT",
+            ]:
+                try:
+                    conn.execute(col_sql)
+                except Exception:
+                    pass
             conn.commit()
 
 
@@ -208,24 +232,84 @@ def already_processed(client_id: str, sender: str, body: str) -> bool:
             return row is not None
 
 
-def log_outbound(from_persona: str, from_name: str, to_email: str, to_name: str, subject: str, body: str):
+def log_outbound(from_persona: str, from_name: str, to_email: str, to_name: str,
+                 subject: str, body: str, full_sequence: str = "", next_follow_up_at: str = "") -> int:
+    """Returns the inserted row id so callers can reference it for follow-ups."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if DATABASE_URL:
         with _conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO outbound_emails
-                        (from_persona, from_name, to_email, to_name, subject, body, sent_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (from_persona, from_name, to_email, to_name, subject, body, now))
+                        (from_persona, from_name, to_email, to_name, subject, body, sent_at,
+                         touch_number, full_sequence, next_follow_up_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 1, %s, %s) RETURNING id
+                """, (from_persona, from_name, to_email, to_name, subject, body, now,
+                      full_sequence or None, next_follow_up_at or None))
+                row_id = cur.fetchone()[0]
+            conn.commit()
+        return row_id
+    else:
+        with _conn() as conn:
+            cur = conn.execute("""
+                INSERT INTO outbound_emails
+                    (from_persona, from_name, to_email, to_name, subject, body, sent_at,
+                     touch_number, full_sequence, next_follow_up_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+            """, (from_persona, from_name, to_email, to_name, subject, body, now,
+                  full_sequence or None, next_follow_up_at or None))
+            conn.commit()
+            return cur.lastrowid
+
+
+def get_due_followups() -> list[dict]:
+    """Return outbound emails whose next_follow_up_at is due and have remaining touches."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT * FROM outbound_emails
+                    WHERE next_follow_up_at IS NOT NULL
+                      AND next_follow_up_at <= %s
+                      AND touch_number < 5
+                      AND full_sequence IS NOT NULL
+                    ORDER BY next_follow_up_at ASC
+                """, (now,))
+                cols = [d[0] for d in cur.description]
+                return [dict(zip(cols, row)) for row in cur.fetchall()]
+    else:
+        with _conn() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("""
+                SELECT * FROM outbound_emails
+                WHERE next_follow_up_at IS NOT NULL
+                  AND next_follow_up_at <= ?
+                  AND touch_number < 5
+                  AND full_sequence IS NOT NULL
+                ORDER BY next_follow_up_at ASC
+            """, (now,)).fetchall()
+            return [dict(r) for r in rows]
+
+
+def update_touch(record_id: int, touch_number: int, next_follow_up_at: str = ""):
+    """Update touch number and next follow-up date after a follow-up is sent."""
+    if DATABASE_URL:
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE outbound_emails
+                    SET touch_number = %s, next_follow_up_at = %s
+                    WHERE id = %s
+                """, (touch_number, next_follow_up_at or None, record_id))
             conn.commit()
     else:
         with _conn() as conn:
             conn.execute("""
-                INSERT INTO outbound_emails
-                    (from_persona, from_name, to_email, to_name, subject, body, sent_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (from_persona, from_name, to_email, to_name, subject, body, now))
+                UPDATE outbound_emails
+                SET touch_number = ?, next_follow_up_at = ?
+                WHERE id = ?
+            """, (touch_number, next_follow_up_at or None, record_id))
             conn.commit()
 
 
