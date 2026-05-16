@@ -16,6 +16,8 @@ from database import get_all_emails, get_stats, init_db, get_setting, set_settin
 from integrations import ALL_TOOLS, TOOL_FUNCTIONS
 from config import CLIENTS, CLAUDE_MODEL, SCHEDULE_MINUTES
 
+CALENDLY_URL = os.environ.get("CALENDLY_URL", "")
+
 app = Flask(__name__)
 
 
@@ -45,6 +47,13 @@ def _extract_touch(sequence: str, touch_num: int) -> dict:
     return {"subject": subject or f"Following up (touch {touch_num})", "body": body}
 
 
+def _inject_calendly(body: str) -> str:
+    """Append a booking link to the email body if CALENDLY_URL is set."""
+    if not CALENDLY_URL:
+        return body
+    return body + f"\n\nIf it's easier, grab 15 minutes here: {CALENDLY_URL}"
+
+
 def send_followups():
     """Check for due follow-up emails and send the next touch in the sequence."""
     import logging
@@ -64,7 +73,7 @@ def send_followups():
                 continue
             persona = record.get("from_persona", "cmo_advisor")
             client_config = CLIENTS.get(persona, CLIENTS["cmo_advisor"])
-            success = send_outbound(client_config, record["to_email"], record.get("to_name", ""), touch["subject"], touch["body"])
+            success = send_outbound(client_config, record["to_email"], record.get("to_name", ""), touch["subject"], _inject_calendly(touch["body"]))
             if success:
                 delay = _TOUCH_DELAYS.get(next_touch, 7)
                 nxt = (datetime.now() + timedelta(days=delay)).strftime("%Y-%m-%d %H:%M:%S") if next_touch < 5 else ""
@@ -2605,7 +2614,7 @@ def send_outreach():
         return jsonify({"error": f"Unknown persona '{from_persona}'. Choose from: {list(CLIENTS.keys())}"}), 400
 
     client_config = CLIENTS[from_persona]
-    success = send_outbound(client_config, to_email, to_name, subject, body)
+    success = send_outbound(client_config, to_email, to_name, subject, _inject_calendly(body))
 
     if success:
         next_follow_up_at = ""
